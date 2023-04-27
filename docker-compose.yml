@@ -1,0 +1,10 @@
+version: "3"
+
+services:
+  casual-progress-bot:
+    build: .
+    image: casual-progress-bot
+    container_name: casual-progress-bot
+    env_file:
+      - .env
+    restart: unless-stopped
