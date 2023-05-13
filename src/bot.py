@@ -1,5 +1,6 @@
 import os
 import discord
+from asyncio import TimeoutError
 
 from src import log, responses
 from src.aclient import client
@@ -49,10 +50,19 @@ User Settings -> Privacy & Safety -> Server Privacy Defaults""")
         # Sends a DM to the user asking for more information about the bug
         await interaction.user.send("Hi there! I'm sorry to hear that you're experiencing a bug.\nCan you please provide me with **this information** so I can help you?\n```markdown\n" + user_friendly_template + "```")
 
-        # Waits for the user's response
-        response = await client.wait_for("message")
-
-        title, body = get_respose_info(response, interaction.user.name)
+        correct_response = False
+        try:
+            # Waits for the user's response
+            while correct_response is False:
+                response = await client.wait_for("message", check=check_author(interaction.user))
+                if not validate_response(response.content):
+                    await interaction.user.send("Your response does not follow the specified template. Please try again using the correct format.")
+                else:
+                    correct_response = True
+        except TimeoutError:
+            await interaction.user.send("You did not reply in time, please try again.")
+            logger.info(f"\x1b[31m{interaction.user.name} took to long to respond with its bug report!\x1b[0m")
+            return
 
         # Extract author information
         try:
@@ -61,12 +71,12 @@ User Settings -> Privacy & Safety -> Server Privacy Defaults""")
                 # ! Discriminators will be deprecated after the roll out of the new username feature
                 'discriminator': interaction.user.discriminator
             }
-            title, body = get_respose_info(response, author['name'], author['discriminator'])
+            title, body = get_response_info(response, author['name'], author['discriminator'])
         
         except Exception as e:
             logger.warning(f"Failed to extract author details: {e}")
             author = interaction.user.name
-            title, body = get_respose_info(response, author)
+            title, body = get_response_info(response, author)
         
         labels = ["bug"]
 
@@ -102,8 +112,19 @@ User Settings -> Privacy & Safety -> Server Privacy Defaults""")
         # Sends a DM to the user asking for more information about the feature request
         await interaction.user.send("Hi there! I'm looking forward to hear that your feature request.\nCan you please provide me with **these details**?\n```markdown\n" + user_friendly_template + "```")
 
-        # Waits for the user's response
-        response = await client.wait_for("message")
+        correct_response = False
+        try:
+            # Waits for the user's response
+            while correct_response is False:
+                response = await client.wait_for("message", check=check_author(interaction.user))
+                if not validate_response(response.content):
+                    await interaction.user.send("Your response does not follow the specified template. Please try again using the correct format.")
+                else:
+                    correct_response = True
+        except TimeoutError:
+            await interaction.user.send("You did not reply in time, please try again.")
+            logger.info(f"\x1b[31m{interaction.user.name} took to long to respond with its feature request!\x1b[0m")
+            return
 
         # Extract author information
         try:
@@ -112,12 +133,12 @@ User Settings -> Privacy & Safety -> Server Privacy Defaults""")
                 # ! Discriminators will be deprecated after the roll out of the new username feature
                 'discriminator': interaction.user.discriminator
             }
-            title, body = get_respose_info(response, author['name'], author['discriminator'])
+            title, body = get_response_info(response, author['name'], author['discriminator'])
         
         except Exception as e:
             logger.warning(f"Failed to extract author details: {e}")
             author = interaction.user.name
-            title, body = get_respose_info(response, author)
+            title, body = get_response_info(response, author)
 
         labels = ["feature"]
 
@@ -148,6 +169,43 @@ For complete documentation, please visit:\nhttps://github.com/lvlcn-t/cp_tx""")
     client.run(TOKEN)
 
 
+def check_author(author):
+    """Checks if a message is from the given author and if it is a direct message.
+
+    This function returns another function that performs the checks.
+    This is known as a closure.
+
+    Args:
+        author (discord.User): The author to check messages against.
+
+    Returns:
+        function: A function that takes a message, checks if it is from the specified author and if it is a direct message, and returns True or False accordingly.
+    """
+    def inner_check(message):
+        return message.author == author and isinstance(message.channel, discord.DMChannel)
+    return inner_check
+
+def validate_response(response):
+    """Validates a response to ensure it follows a specific format.
+
+    This function checks that a response has a title line that isn't empty, and a second line consisting of '---'.
+
+    Args:
+        response (str): The response to validate.
+
+    Returns:
+        bool: True if the response is valid, False otherwise.
+    """
+    lines = response.split("\n")
+    
+    # Check if the 'title' line exists and is not empty
+    title_exists = any(line.strip().lower().startswith('title:') and line.strip().lower() != 'title:' for line in lines)
+    
+    # Check if the second '---' line exists
+    second_dash_line_exists = '---' in lines[1:]
+
+    return title_exists and second_dash_line_exists
+
 # Function to clean the template by removing specific lines
 def clean_template(template:str, lines_to_remove:list):
     """Removes specified lines from a given template.
@@ -166,7 +224,7 @@ def clean_template(template:str, lines_to_remove:list):
     return template
 
 # Function to extract relevant information from a user's response
-def get_respose_info(response, author_name, author_discriminator=None):
+def get_response_info(response, author_name, author_discriminator=None):
     """Extracts the title and body from a user's response.
 
     Args:
@@ -184,7 +242,8 @@ def get_respose_info(response, author_name, author_discriminator=None):
     body = ""
     is_body = False
     for line in lines:
-        if line.startswith("title:"):
+        # Use lower() to make the check case-insensitive
+        if line.lower().startswith("title:"):
             title = line.replace("title:", "").strip()
             title = title.replace("'", "")
         elif line.strip() == "---" and not is_body:
