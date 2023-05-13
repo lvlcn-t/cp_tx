@@ -27,7 +27,10 @@ def run_discord_bot():
     @client.tree.command(name="bug", description="Report a bug")
     async def bug(interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
-        await client.send_message(interaction, "For more info, check your DMs.")
+        await client.send_message(interaction, """
+**For more infos check your DMs.**\n\n \
+If you don't have a DM from me, you need to activate this **Allow direct messages from server members** in your settings: \n \
+User Settings -> Privacy & Safety -> Server Privacy Defaults""")
 
         # Opens the bug_report.md file
         with open("./.github/ISSUE_TEMPLATE/bug_report.md", "r") as f:
@@ -71,13 +74,17 @@ def run_discord_bot():
 
         # Thanks the user for their report
         await interaction.user.send("Thank you for your report! We'll look into it and get back to you as soon as possible.")
+        logger.info(f"\x1b[31m{interaction.user.name} reportet a bug!\x1b[0m")
 
 
     # Command to request a feature
     @client.tree.command(name="request-feature", description="Request a feature")
     async def req_feature(interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
-        await client.send_message(interaction, "For more infos check your DMs.")
+        await client.send_message(interaction, """
+**For more infos check your DMs.**\n\n \
+If you don't have a DM from me, you need to activate this **Allow direct messages from server members** in your settings: \n \
+User Settings -> Privacy & Safety -> Server Privacy Defaults""")
 
         # Opens the feature_request.md file
         with open("./.github/ISSUE_TEMPLATE/feature_request.md", "r") as f:
@@ -93,7 +100,7 @@ def run_discord_bot():
 
         user_friendly_template = clean_template(feature_request_template, lines_to_remove)
         # Sends a DM to the user asking for more information about the feature request
-        await interaction.user.send("Hi there! I'm looking forward to hear that your feature request.\nCan you please provide me with **these details**?\n```" + user_friendly_template + "```")
+        await interaction.user.send("Hi there! I'm looking forward to hear that your feature request.\nCan you please provide me with **these details**?\n```markdown\n" + user_friendly_template + "```")
 
         # Waits for the user's response
         response = await client.wait_for("message")
@@ -118,12 +125,18 @@ def run_discord_bot():
 
         # Thanks the user for their feature request
         await interaction.user.send("Thank you for your request! We'll look into it!")
+        logger.info(f"\x1b[31m{interaction.user.name} requested a feature!\x1b[0m")
 
     # Command to get help for the bot
     @client.tree.command(name="help", description="Show help for the bot")
     async def help(interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=False)
-        await interaction.followup.send(""" **BASIC COMMANDS** \n- `/logs` Returns the link to the latest logs.\nFor complete documentation, please visit:\nhttps://github.com/lvlcn-t/cp_tx""")
+        await interaction.followup.send("""\
+**BASIC COMMANDS** \n \
+- `/logs` Returns the link to the latest logs.\n \
+- `/bug` Report a bug\n \
+- `/request-feature` Request a feature\n \
+For complete documentation, please visit:\nhttps://github.com/lvlcn-t/cp_tx""")
 
         logger.info("\x1b[31mSomeone needs help!\x1b[0m")
         
