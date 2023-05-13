@@ -18,10 +18,9 @@ class aclient(discord.Client):
 
     async def send_message(self, interaction, response):
         try:
-            await interaction.response.defer(ephemeral=False)
             await interaction.followup.send(response)
         except Exception as e:
-            await interaction.followup.send(f"> **ERROR: Something went wrong, please try again later!** \n ```ERROR MESSAGE: {e}```")
+            await interaction.followup.send(f"> **ERROR: Something went wrong, please try again later!**")
             logger.exception(f"Error while sending message: {e}")
 
 
