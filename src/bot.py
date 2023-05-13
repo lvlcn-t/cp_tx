@@ -49,7 +49,8 @@ User Settings -> Privacy & Safety -> Server Privacy Defaults""")
         user_friendly_template = clean_template(bug_report_template, lines_to_remove)
         # Sends a DM to the user asking for more information about the bug
         await interaction.user.send("Hi there! I'm sorry to hear that you're experiencing a bug.\nCan you please provide me with **this information** so I can help you?\n```markdown\n" + user_friendly_template + "```")
-
+        
+        response = None
         correct_response = False
         try:
             # Waits for the user's response
@@ -112,6 +113,7 @@ User Settings -> Privacy & Safety -> Server Privacy Defaults""")
         # Sends a DM to the user asking for more information about the feature request
         await interaction.user.send("Hi there! I'm looking forward to hear that your feature request.\nCan you please provide me with **these details**?\n```markdown\n" + user_friendly_template + "```")
 
+        response = None
         correct_response = False
         try:
             # Waits for the user's response
