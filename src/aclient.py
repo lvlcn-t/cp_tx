@@ -45,11 +45,15 @@ class aclient(discord.Client):
         """
         try:
             # Try to send the response
-            await interaction.followup.send(response)
+            if isinstance(response, discord.Embed):
+                await interaction.followup.send(embed=response)
+            else:
+                await interaction.followup.send(response)
         except Exception as e:
             # If an error occurs, send an error message and log the exception
             await interaction.followup.send(f"> **ERROR: Something went wrong, please try again later!**")
             logger.exception(f"Error while sending message: {e}")
+
 
 # Create an instance of the custom client class
 client = aclient()
