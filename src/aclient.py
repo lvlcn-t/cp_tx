@@ -41,7 +41,7 @@ class aclient(discord.Client):
 
         Args:
             interaction: The interaction to which the bot should respond.
-            response: The response message to send.
+            response: The response message or embed to send.
         """
         try:
             # Try to send the response
