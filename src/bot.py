@@ -25,6 +25,40 @@ def run_discord_bot():
         response = await warcraftlogs.latest_logs()
         await client.send_message(interaction, response)
 
+    @client.tree.command(name="rio-guild", description="Returns the link to the guilds raider.io profile")
+    async def rio_guild_profile(interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=False)
+        response = await raiderio.guild_profile()
+        # with open("./.tmp/response_rio.json", "a") as f:
+        #     f.write(str(response).replace("'", "\""))
+        if response != "> **ERROR: Something went wrong, please try again …":
+            embed = discord.Embed(
+                title="Casual Progress",
+                color=0x00ffff,
+                url="https://raider.io/guilds/eu/eredar/Casual%20Progress"
+            )
+            embed.set_thumbnail(url="https://render.worldofwarcraft.com/eu/guild/crest/114/emblem-114-b1b8b1-232323.jpg")
+            embed.set_author(
+                name="Casual Progress Bot",
+                url="https://worldofwarcraft.blizzard.com/en-gb/guild/eu/eredar/casual-progress",
+                icon_url="https://render.worldofwarcraft.com/eu/guild/crest/114/emblem-114-b1b8b1-232323.jpg"
+            )
+
+            embed.add_field(name=f"Aktueller Stand im Content: { list(response['raid_progression'].values())[0]['summary'] }", value="", inline=False)
+            for raid, summary in response['raid_progression'].items():
+                if "N" in summary["summary"]:
+                    summary["summary"] = "<:green:770983655190822913> " + summary["summary"]
+                elif "H" in summary["summary"]:
+                    summary["summary"] = ":blue_circle: " + summary["summary"]
+                elif "M" in summary["summary"]:
+                    summary["summary"] = "<:purple:770983655526105088> " + summary["summary"]
+                raid_name = raid.replace('-', ' ').title()
+                embed.add_field(name=f"{raid_name}:", value=f"{summary['summary']}", inline=False)
+                # TODO: add embed field for last boss kill
+
+            await client.send_message(interaction, embed)
+        else:
+            await client.send_message(interaction, response)
 
     # * Command to report a bug
     @client.tree.command(name="bug", description="Report a bug")
