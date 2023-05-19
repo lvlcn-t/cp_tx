@@ -48,8 +48,8 @@ async def check_update(client, interaction, response=None):
         # Get the current date and time
         now = datetime.now()
 
-        # Check if the current day is Tuesday or Friday, and the time is between 6 pm and 11 pm
-        if ((now.weekday() == 1 or now.weekday() == 4) and 18 <= now.hour < 23):
+        # Check if the current day is Tuesday or Friday, and the time is between 4 pm and 9 pm UTC (6 pm and 11 pm CEST)
+        if ((now.weekday() == 1 or now.weekday() == 4) and 16 <= now.hour < 21):
             try:
                 content = await fetch_website_content(responses.latest_wc_logs)
 
