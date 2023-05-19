@@ -2,7 +2,7 @@ import os
 import discord
 from asyncio import TimeoutError
 
-from src import log, responses
+from src import log, responses, check_updates
 from src.aclient import client
 
 # Setting up the logger for the discord bot
@@ -23,6 +23,9 @@ def run_discord_bot():
         await interaction.response.defer(ephemeral=False)
         response = await responses.latest_wc_logs()
         await client.send_message(interaction, response)
+        
+        # Start the check_update loop
+        await check_updates.check_update(client, interaction, response)
 
     # Command to report a bug
     @client.tree.command(name="bug", description="Report a bug")
