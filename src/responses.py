@@ -6,7 +6,7 @@ from github import Github
 # Initialize logger
 logger = log.setup_logger(__name__)
 
-async def latest_wc_logs(client) -> str:
+async def latest_wc_logs() -> str:
     """Fetches the latest Warcraft logs and returns the log URL.
 
     Args:

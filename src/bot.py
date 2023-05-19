@@ -21,7 +21,7 @@ def run_discord_bot():
     @client.tree.command(name="logs", description="Returns the link to the latest logs")
     async def logs(interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=False)
-        response = await responses.latest_wc_logs(client)
+        response = await responses.latest_wc_logs()
         await client.send_message(interaction, response)
 
     # Command to report a bug
