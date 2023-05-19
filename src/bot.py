@@ -20,12 +20,15 @@ def run_discord_bot():
     # Command to get the latest logs
     @client.tree.command(name="logs", description="Returns the link to the latest logs")
     async def logs(interaction: discord.Interaction):
-        await interaction.response.defer(ephemeral=False)
-        response = await responses.latest_wc_logs()
-        await client.send_message(interaction, response)
-        
-        # Start the check_update loop
-        await check_updates.check_update(client, interaction, response)
+        if interaction.user.guild_permissions.administrator:
+            await interaction.response.defer(ephemeral=False)
+            response = await responses.latest_wc_logs()
+            await client.send_message(interaction, response)
+            
+            # Start the check_update loop
+            await check_updates.check_update(client, interaction, response)
+        else:
+            await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
 
     # Command to report a bug
     @client.tree.command(name="bug", description="Report a bug")
