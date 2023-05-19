@@ -55,8 +55,9 @@ async def check_update(client, interaction, response=None):
 
                 if content != previous_content:
                     # Website content has changed
-                    # Update the Discord message using the interactions API
-                    await client.send_message(interaction, content)
+                    # Get the channel from the interaction's channel_id and send the message to the channel directly
+                    channel = client.get_channel(interaction.channel_id)
+                    await channel.send(content)
                     previous_content = content
                     logger.info("Website content has been updated.")
                 else:
