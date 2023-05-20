@@ -3,7 +3,7 @@ import discord
 from discord import app_commands
 from asyncio import TimeoutError
 
-from src import log, responses, warcraftlogs, raiderio, gh, check_updates
+from src import log, responses, warcraftlogs, raiderio, gh, bot_coroutines
 from src.aclient import client
 
 # Setting up the logger for the discord bot
@@ -42,68 +42,27 @@ def run_discord_bot():
                 "You do not have permission to use this command.", ephemeral=True
             )
 
-    @client.tree.command(name="rio-guild", description="Returns the link to the guilds raider.io profile")
-    async def rio_guild_profile(interaction: discord.Interaction):
+    @client.tree.command(
+        name="guild-profile",
+        description="Returns the link to the guilds raider.io profile",
+    )
+    async def rio_guild_profile(interaction: discord.Interaction, coroutine: bool = False):
         """
         Asynchronously handles the "rio-guild" command. Sends a message containing the guild's raider.io profile.
         
         Args:
             interaction (discord.Interaction): The interaction object containing the command data.
+            coroutine (bool, optional): If True, start the coroutine loop to periodically check for updates. Defaults to False.
         """
         await interaction.response.defer(ephemeral=False)
-        raid_progression, boss_names, latest_boss_kill_links = await raiderio.guild_profile()
+        response = await responses.prepare_rio_guild_embed()
 
-        if raid_progression != "> **ERROR: Something went wrong, please try again …":
-            # Create embed message.
-            embed = discord.Embed(
-                title="Casual Progress",
-                color=0x00FFFF,
-                url="https://raider.io/guilds/eu/eredar/Casual%20Progress",
-            )
-            embed.set_thumbnail(
-                url="https://render.worldofwarcraft.com/eu/guild/crest/114/emblem-114-b1b8b1-232323.jpg"
-            )
-            embed.set_author(
-                name="Casual Progress Bot",
-                url="https://worldofwarcraft.blizzard.com/en-gb/guild/eu/eredar/casual-progress",
-                icon_url="https://render.worldofwarcraft.com/eu/guild/crest/114/emblem-114-b1b8b1-232323.jpg",
-            )
-
-            # Add raid progression to embed.
-            embed.add_field(
-                name=f"Aktueller Stand im Content: { list(raid_progression['raid_progression'].values())[0]['summary'] }",
-                value="",
-                inline=False,
-            )
-            for raid_index, (raid, summary) in enumerate(raid_progression["raid_progression"].items()):
-                # Format raid progress summary with corresponding emoji.
-                if "N" in summary["summary"]:
-                    summary["summary"] = (
-                        "<:green:770983655190822913> " + summary["summary"]
-                    )
-                elif "H" in summary["summary"]:
-                    summary["summary"] = ":blue_circle: " + summary["summary"]
-                elif "M" in summary["summary"]:
-                    summary["summary"] = (
-                        "<:purple:770983655526105088> " + summary["summary"]
-                    )
-                raid_name = raid.replace("-", " ").title()
-                # Add raid progress to embed.
-                embed.add_field(
-                    name=f"{raid_name}:", value=f"{summary['summary']}", inline=True
-                )
-                # Add latest boss kill to embed.
-                embed.add_field(
-                    name="Latest Boss-Kill:", 
-                    value=f"[{boss_names[raid_index]}]({latest_boss_kill_links[raid_index]})", 
-                    inline=True
-                )
-
-            # Send embed message.
-            await client.send_message(interaction, embed)
+        if coroutine:
+            # Start the coroutine loop
+            await bot_coroutines.checkGuildKills(client, interaction, response)
         else:
-            # Send error message.
-            await client.send_message(interaction, raid_progression)
+            # Send the embed message
+            await client.send_message(interaction, response)
 
     # * Command to report a bug
     @client.tree.command(name="bug", description="Report a bug")

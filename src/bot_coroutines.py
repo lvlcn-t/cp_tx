@@ -80,3 +80,50 @@ async def stopLogs():
     global is_checking_logs
     is_checking_logs = False
 
+async def checkGuildKills(client, interaction, embed=None):
+    """
+    This function is used to check for updates on a website. It's an asyncio coroutine and should be used with await.
+
+    Args:
+        client (discord.Client): The client object that will be used to send messages
+        interaction (discord.Interaction): The interaction object that will be used to send messages
+        response (str, optional): The previous content of the website. Defaults to None.
+
+    Returns:
+        None: This function does not return anything. It runs indefinitely.
+    """
+    # Updating global previous_content with the response, if provided
+    global previous_embed
+    previous_embed = embed
+
+    # Instead of using the interaction response, send a regular message and keep a reference to it
+    message = await client.send_message(interaction, previous_embed)
+    
+    async def check_guild_embed():
+        """
+        An async function that checks if the guild's rio data has changed.
+
+        This function fetches the website content using fetch_website_content() and then checks if it has changed.
+        If it has, it sends a message through the client and updates previous_content.
+        """
+        global previous_embed
+
+        try:
+            content = await fetch_function_data(responses.prepare_rio_guild_embed)
+
+            if content != previous_embed:
+                # Edit the message directly
+                await message.edit(embed=content)
+                previous_embed = content
+                logger.info("Guild embed has been updated.")
+            else:
+                logger.info("Guild embed has not changed.")
+        except Exception as e:
+            logger.error(f"An error occurred in check_website: {e}")
+
+    while True:
+        try:
+            await check_guild_embed()
+            await asyncio.sleep(3600)  # Wait for 1 hour
+        except Exception as e:
+            logger.error(f"An error occurred in check_update: {e}")
