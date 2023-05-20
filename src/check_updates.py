@@ -7,10 +7,11 @@ logger = log.setup_logger(__name__)
 
 previous_content = None
 
+
 async def check_update(client, interaction, response=None):
     """
     This function is used to check for updates on a website. It's an asyncio coroutine and should be used with await.
-    
+
     Args:
         client (discord.Client): The client object that will be used to send messages
         interaction (discord.Interaction): The interaction object that will be used to send messages
@@ -49,7 +50,7 @@ async def check_update(client, interaction, response=None):
         now = datetime.now()
 
         # Check if the current day is Tuesday or Friday, and the time is between 4 pm and 9 pm UTC (6 pm and 11 pm CEST)
-        if ((now.weekday() == 1 or now.weekday() == 4) and 16 <= now.hour < 21):
+        if (now.weekday() == 1 or now.weekday() == 4) and 16 <= now.hour < 21:
             try:
                 content = await fetch_website_content(responses.latest_wc_logs)
 

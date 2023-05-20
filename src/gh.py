@@ -6,7 +6,6 @@ from github import Github
 logger = log.setup_logger(__name__)
 
 
-
 async def create_github_issue(title: str, body: str, labels: list):
     """Creates a GitHub issue.
 
@@ -28,6 +27,7 @@ async def create_github_issue(title: str, body: str, labels: list):
         logger.exception(f"Error while creating GitHub issue: {e}")
         return None
 
+
 def get_repo(repo_name):
     """Fetches a GitHub repository.
 
@@ -47,6 +47,7 @@ def get_repo(repo_name):
 
     return repo
 
+
 def validate_response(response):
     """Validates a response to ensure it follows a specific format.
 
@@ -59,17 +60,21 @@ def validate_response(response):
         bool: True if the response is valid, False otherwise.
     """
     lines = response.split("\n")
-    
+
     # Check if the 'title' line exists and is not empty
-    title_exists = any(line.strip().lower().startswith('title:') and line.strip().lower() != 'title:' for line in lines)
-    
+    title_exists = any(
+        line.strip().lower().startswith("title:") and line.strip().lower() != "title:"
+        for line in lines
+    )
+
     # Check if the second '---' line exists
-    second_dash_line_exists = '---' in lines[1:]
+    second_dash_line_exists = "---" in lines[1:]
 
     return title_exists and second_dash_line_exists
 
+
 # Function to clean the template by removing specific lines
-def clean_template(template:str, lines_to_remove:list):
+def clean_template(template: str, lines_to_remove: list):
     """Removes specified lines from a given template.
 
     Args:
@@ -84,6 +89,7 @@ def clean_template(template:str, lines_to_remove:list):
         template = template.replace(line, "")
 
     return template
+
 
 # Function to extract relevant information from a user's response
 def get_response_info(response, author_name, author_discriminator=None):
@@ -112,7 +118,7 @@ def get_response_info(response, author_name, author_discriminator=None):
             is_body = True
         elif is_body and not line.strip() == "---":
             body += line + "\n"
-    
+
     if author_discriminator is not None:
         body += f"\n\n**From: {author_name}#{author_discriminator}**"
     else:

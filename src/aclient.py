@@ -9,13 +9,14 @@ logger = log.setup_logger(__name__)
 # Load environment variables from a .env file
 load_dotenv()
 
+
 class aclient(discord.Client):
     """Custom discord client class for handling specific bot functionalities.
 
     This class is a subclass of discord.Client and includes methods for sending messages,
     and handling the bot's status/activity.
     """
-    
+
     def __init__(self) -> None:
         """Initializes the aclient class.
 
@@ -33,8 +34,9 @@ class aclient(discord.Client):
         self.tree = app_commands.CommandTree(self)
 
         # Set the bot's activity
-        self.activity = discord.Activity(type=discord.ActivityType.listening, name="/logs | /help")
-
+        self.activity = discord.Activity(
+            type=discord.ActivityType.listening, name="/logs | /help"
+        )
 
     async def send_message(self, interaction, response):
         """Sends a follow-up message in response to an interaction.
@@ -51,7 +53,9 @@ class aclient(discord.Client):
                 await interaction.followup.send(response)
         except Exception as e:
             # If an error occurs, send an error message and log the exception
-            await interaction.followup.send(f"> **ERROR: Something went wrong, please try again later!**")
+            await interaction.followup.send(
+                f"> **ERROR: Something went wrong, please try again later!**"
+            )
             logger.exception(f"Error while sending message: {e}")
 
 
