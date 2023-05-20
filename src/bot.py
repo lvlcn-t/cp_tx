@@ -69,17 +69,27 @@ def run_discord_bot():
             await client.send_message(interaction, response)
 
         elif choices.value == "start":
-            # Start the coroutine
-            await interaction.response.defer(ephemeral=True)
-            response = await responses.prepare_rio_guild_embed()
-            await client.send_message(interaction, "Started guild profile coroutine.")
-            await bot_coroutines.startGuildProfile(client, interaction, response)
+            if interaction.user.guild_permissions.administrator: # type: ignore
+                # Start the coroutine
+                await interaction.response.defer(ephemeral=True)
+                response = await responses.prepare_rio_guild_embed()
+                await client.send_message(interaction, "Started guild profile coroutine.")
+                await bot_coroutines.startGuildProfile(client, interaction, response)
+            else:
+                await interaction.response.send_message(
+                    "You do not have permission to use this command.", ephemeral=True
+                )
 
         elif choices.value == "stop":
-            # Stop the coroutine
-            await interaction.response.defer(ephemeral=True)
-            await bot_coroutines.stopGuildProfile()
-            await client.send_message(interaction, "Stopped guild profile coroutine.")
+            if interaction.user.guild_permissions.administrator: # type: ignore
+                # Stop the coroutine
+                await interaction.response.defer(ephemeral=True)
+                await bot_coroutines.stopGuildProfile()
+                await client.send_message(interaction, "Stopped guild profile coroutine.")
+            else:
+                await interaction.response.send_message(
+                    "You do not have permission to use this command.", ephemeral=True
+                )
 
         else:
             await interaction.response.defer(ephemeral=True)
@@ -252,14 +262,14 @@ User Settings -> Privacy & Safety -> Server Privacy Defaults""",
         await interaction.followup.send("""
 ### **BASIC COMMANDS**
 
-- `/logs [start|stop]`: Starts or stops the logging coroutine.
+- `/logs [start|stop]`: Starts or stops the logging coroutine. Only for users with administrator permissions.
   - **start**: Begins the logging coroutine.
   - **stop**: Stops the logging coroutine.
 
 - `/guild-profile [once|start|stop]`: Shows the guild's raider.io profile.
-  - **once**: Sends the guild's raider.io profile as a message.
-  - **start**: Begins a coroutine to periodically update the guild's embed with the new raider.io profile information.
-  - **stop**: Stops the raider.io profile update coroutine.
+  - **once**: Sends the guild's raider.io profile as a message. Only for users with the role "Raidbewerber" or higher.
+  - **start**: Begins a coroutine to periodically update the guild's embed with the new raider.io profile information. Only for users with administrator permissions.
+  - **stop**: Stops the raider.io profile update coroutine. Only for users with administrator permissions.
 
 - `/bug`: Report a bug.
     - After sending this command, the bot will direct message you asking for details about the bug.
