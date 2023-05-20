@@ -3,7 +3,7 @@ import discord
 from discord import app_commands
 from asyncio import TimeoutError
 
-from src import log, responses, warcraftlogs, raiderio, gh
+from src import log, responses, warcraftlogs, raiderio, gh, check_updates
 from src.aclient import client
 
 # Setting up the logger for the discord bot
@@ -21,9 +21,15 @@ def run_discord_bot():
     # * Command to get the latest logs
     @client.tree.command(name="logs", description="Returns the link to the latest logs")
     async def logs(interaction: discord.Interaction):
-        await interaction.response.defer(ephemeral=False)
-        response = await warcraftlogs.latest_logs()
-        await client.send_message(interaction, response)
+        if interaction.user.guild_permissions.administrator:
+            await interaction.response.defer(ephemeral=False)
+            response = await warcraftlogs.latest_logs()
+            await client.send_message(interaction, response)
+            
+            # Start the check_update loop
+            await check_updates.check_update(client, interaction, response)
+        else:
+            await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
 
     @client.tree.command(name="rio-guild", description="Returns the link to the guilds raider.io profile")
     async def rio_guild_profile(interaction: discord.Interaction):
