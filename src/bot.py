@@ -20,14 +20,23 @@ def run_discord_bot():
 
     # * Command to get the latest logs
     @client.tree.command(name="logs", description="Returns the link to the latest logs")
-    async def logs(interaction: discord.Interaction):
-        if interaction.user.guild_permissions.administrator:
-            await interaction.response.defer(ephemeral=False)
-            response = await warcraftlogs.latest_logs()
-            await client.send_message(interaction, response)
-
-            # Start the check_update loop
-            await check_updates.check_update(client, interaction, response)
+    @app_commands.choices(choices=
+        [
+            app_commands.Choice(name="Start log coroutine", value="start"),
+            app_commands.Choice(name="Stop log coroutine", value="stop")
+        ]
+    )
+    async def logs(interaction: discord.Interaction, choices: app_commands.Choice[str]):
+        if interaction.user.guild_permissions.administrator: # type: ignore
+            await interaction.response.defer(ephemeral=True)
+            # Start or stop the logs coroutine loop based on the action parameter
+            if choices.value == "start":
+                await client.send_message(interaction, "Logs started.")
+                await bot_coroutines.startLogs(client, interaction)
+            elif choices.value == "stop":
+                # Stop the coroutine
+                await bot_coroutines.stopLogs()
+                await client.send_message(interaction, "Logs stopped.")
         else:
             await interaction.response.send_message(
                 "You do not have permission to use this command.", ephemeral=True
@@ -274,7 +283,7 @@ For complete documentation, please visit:\nhttps://github.com/lvlcn-t/cp_tx"""
     TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 
     # Run the bot
-    client.run(TOKEN)
+    client.run(str(TOKEN))
 
 
 def check_author(author):
