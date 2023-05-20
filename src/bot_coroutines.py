@@ -6,7 +6,8 @@ from datetime import datetime
 logger = log.setup_logger(__name__)
 
 previous_embed = None
-
+is_checking_logs = None
+is_checking_guild_profile = None
 
 async def fetch_function_data(callback_function):
         """
@@ -36,7 +37,10 @@ async def startLogs(client, interaction, response=None):
     # Updating global previous_content with the response, if provided
     global previous_embed
     previous_embed = response
+    
+    global is_checking_logs
     is_checking_logs = True
+    logger.info("Log coroutine has been enabled.")
     
     async def check_website():
         """
@@ -77,17 +81,21 @@ async def startLogs(client, interaction, response=None):
             logger.error(f"An error occurred in check_update: {e}")
             
 async def stopLogs():
+    """This function is used to stop the website content checking.
+    """
     global is_checking_logs
     is_checking_logs = False
+    logger.info("Log coroutine has been disabled.")
 
-async def checkGuildKills(client, interaction, embed=None):
+
+async def startGuildProfile(client, interaction, embed):
     """
     This function is used to check for updates on a website. It's an asyncio coroutine and should be used with await.
 
     Args:
         client (discord.Client): The client object that will be used to send messages
         interaction (discord.Interaction): The interaction object that will be used to send messages
-        response (str, optional): The previous content of the website. Defaults to None.
+        embed (str): The previous content of the website.
 
     Returns:
         None: This function does not return anything. It runs indefinitely.
@@ -96,10 +104,15 @@ async def checkGuildKills(client, interaction, embed=None):
     global previous_embed
     previous_embed = embed
 
-    # Instead of using the interaction response, send a regular message and keep a reference to it
-    message = await client.send_message(interaction, previous_embed)
+    global is_checking_guild_profile
+    is_checking_guild_profile = True
+    logger.info("Guild profile coroutine has been enabled.")
     
-    async def check_guild_embed():
+    # Get message from interaction for editing the message afterwards if the guild profile was updated
+    message = await client.send_message(interaction, embed)
+    init = True
+    
+    async def check_guild_embed(init: bool) -> None:
         """
         An async function that checks if the guild's rio data has changed.
 
@@ -110,8 +123,8 @@ async def checkGuildKills(client, interaction, embed=None):
 
         try:
             content = await fetch_function_data(responses.prepare_rio_guild_embed)
-
-            if content != previous_embed:
+            
+            if content != previous_embed or init is True:
                 # Edit the message directly
                 await message.edit(embed=content)
                 previous_embed = content
@@ -121,9 +134,18 @@ async def checkGuildKills(client, interaction, embed=None):
         except Exception as e:
             logger.error(f"An error occurred in check_website: {e}")
 
-    while True:
+    while is_checking_guild_profile:
         try:
-            await check_guild_embed()
+            await check_guild_embed(init)
+            if init is True:
+                init = False
             await asyncio.sleep(3600)  # Wait for 1 hour
         except Exception as e:
             logger.error(f"An error occurred in check_update: {e}")
+            
+async def stopGuildProfile():
+    """This function is used to disable the guild profile checking.
+    """
+    global is_checking_guild_profile
+    is_checking_guild_profile = False
+    logger.info("Guild profile coroutine has been disabled.")

@@ -44,13 +44,19 @@ class aclient(discord.Client):
         Args:
             interaction: The interaction to which the bot should respond.
             response: The response message or embed to send.
+            
+        Returns:
+            message: The Message object that was sent.
         """
         try:
             # Try to send the response
             if isinstance(response, discord.Embed):
-                await interaction.followup.send(embed=response)
+                message = await interaction.followup.send(embed=response)
             else:
-                await interaction.followup.send(response)
+                message = await interaction.followup.send(response)
+
+            return message  # Return the Message object
+
         except Exception as e:
             # If an error occurs, send an error message and log the exception
             await interaction.followup.send(

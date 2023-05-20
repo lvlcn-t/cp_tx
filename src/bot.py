@@ -42,11 +42,19 @@ def run_discord_bot():
                 "You do not have permission to use this command.", ephemeral=True
             )
 
+    # * Command to get the guild raider.io profile
     @client.tree.command(
         name="guild-profile",
         description="Returns the link to the guilds raider.io profile",
     )
-    async def rio_guild_profile(interaction: discord.Interaction, coroutine: bool = False):
+    @app_commands.choices(choices=
+        [
+            app_commands.Choice(name="Show once", value="once"),
+            app_commands.Choice(name="Start coroutine", value="start"),
+            app_commands.Choice(name="Stop coroutine", value="stop")
+        ]
+    )
+    async def rio_guild_profile(interaction: discord.Interaction, choices: app_commands.Choice[str]):
         """
         Asynchronously handles the "rio-guild" command. Sends a message containing the guild's raider.io profile.
         
@@ -54,15 +62,29 @@ def run_discord_bot():
             interaction (discord.Interaction): The interaction object containing the command data.
             coroutine (bool, optional): If True, start the coroutine loop to periodically check for updates. Defaults to False.
         """
-        await interaction.response.defer(ephemeral=False)
-        response = await responses.prepare_rio_guild_embed()
-
-        if coroutine:
-            # Start the coroutine loop
-            await bot_coroutines.checkGuildKills(client, interaction, response)
-        else:
+        if choices.value == "once":
+            await interaction.response.defer(ephemeral=False)
+            response = await responses.prepare_rio_guild_embed()
             # Send the embed message
             await client.send_message(interaction, response)
+
+        elif choices.value == "start":
+            # Start the coroutine
+            await interaction.response.defer(ephemeral=True)
+            response = await responses.prepare_rio_guild_embed()
+            await client.send_message(interaction, "Started guild profile coroutine.")
+            await bot_coroutines.startGuildProfile(client, interaction, response)
+
+        elif choices.value == "stop":
+            # Stop the coroutine
+            await interaction.response.defer(ephemeral=True)
+            await bot_coroutines.stopGuildProfile()
+            await client.send_message(interaction, "Stopped guild profile coroutine.")
+
+        else:
+            await interaction.response.defer(ephemeral=True)
+            await client.send_message(interaction, "Invalid action.")
+            logger.warning(f"Invalid action: {choices.value}")
 
     # * Command to report a bug
     @client.tree.command(name="bug", description="Report a bug")
