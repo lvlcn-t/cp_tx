@@ -35,7 +35,7 @@ class aclient(discord.Client):
 
         # Set the bot's activity
         self.activity = discord.Activity(
-            type=discord.ActivityType.listening, name="/logs | /help"
+            type=discord.ActivityType.listening, name="/help"
         )
 
     async def send_message(self, interaction, response):

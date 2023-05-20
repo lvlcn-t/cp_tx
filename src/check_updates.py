@@ -1,4 +1,4 @@
-from src import responses, log
+from src import warcraftlogs, log
 import asyncio
 from datetime import datetime
 
@@ -52,7 +52,7 @@ async def check_update(client, interaction, response=None):
         # Check if the current day is Tuesday or Friday, and the time is between 4 pm and 9 pm UTC (6 pm and 11 pm CEST)
         if (now.weekday() == 1 or now.weekday() == 4) and 16 <= now.hour < 21:
             try:
-                content = await fetch_website_content(responses.latest_wc_logs)
+                content = await fetch_website_content(warcraftlogs.latest_logs)
 
                 if content != previous_content:
                     # Website content has changed
