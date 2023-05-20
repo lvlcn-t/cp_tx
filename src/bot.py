@@ -249,15 +249,26 @@ User Settings -> Privacy & Safety -> Server Privacy Defaults""",
     @client.tree.command(name="help", description="Show help for the bot")
     async def help(interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=False)
-        await interaction.followup.send(
-            """\
-**BASIC COMMANDS** \n \
-- `/logs` Returns the link to the latest logs.\n \
-- `/bug` Report a bug\n \
-- `/request-feature` Request a feature\n \
-For complete documentation, please visit:\nhttps://github.com/lvlcn-t/cp_tx"""
-        )
+        await interaction.followup.send("""
+### **BASIC COMMANDS**
 
+- `/logs [start|stop]`: Starts or stops the logging coroutine.
+  - **start**: Begins the logging coroutine.
+  - **stop**: Stops the logging coroutine.
+
+- `/guild-profile [once|start|stop]`: Shows the guild's raider.io profile.
+  - **once**: Sends the guild's raider.io profile as a message.
+  - **start**: Begins a coroutine to periodically update the guild's embed with the new raider.io profile information.
+  - **stop**: Stops the raider.io profile update coroutine.
+
+- `/bug`: Report a bug.
+    - After sending this command, the bot will direct message you asking for details about the bug.
+
+- `/request-feature`: Request a feature.
+    - After sending this command, the bot will direct message you asking for details about the feature request.
+
+For complete documentation, please visit:\nhttps://github.com/lvlcn-t/cp_tx
+        """)
         logger.info("\x1b[31mSomeone needs help!\x1b[0m")
 
     # Get the bot token from environment variables
