@@ -318,6 +318,10 @@ User Settings -> Privacy & Safety -> Server Privacy Defaults""",
   - **start**: Begins a coroutine to periodically update the guild's embed with the new raider.io profile information. Only for users with administrator permissions.
   - **stop**: Stops the raider.io profile update coroutine. Only for users with administrator permissions.
 
+- `/move [source] [destination]`: Moves all users from one channel to another. Only for users with administrator permissions.
+
+- `/raidbots`: Shows the login credentials of the raidbots account. Only for users with the role "Raidmember" or higher.
+
 - `/bug`: Report a bug.
     - After sending this command, the bot will direct message you asking for details about the bug.
 

@@ -2,20 +2,34 @@
 
 ## Features
 
-* `/logs [date]` Returns the logs of a given date. If no date is given, the bot sends the latest logs.
+- `/logs [start|stop]`: Starts or stops the logging coroutine. Only for users with administrator permissions.
+  - **start**: Begins the logging coroutine.
+  - **stop**: Stops the logging coroutine.
 
+- `/guild-profile [once|start|stop]`: Shows the guild's raider.io profile.
+  - **once**: Sends the guild's raider.io profile as a message. Only for users with the role "Raidbewerber" or higher.
+  - **start**: Begins a coroutine to periodically update the guild's embed with the new raider.io profile information. Only for users with administrator permissions.
+  - **stop**: Stops the raider.io profile update coroutine. Only for users with administrator permissions.
 
-### Chat
+- `/move [source] [destination]`: Moves all users from one channel to another. Only for users with administrator permissions.
 
-![image](https://user-images.githubusercontent.com/89479282/206497774-47d960cd-1aeb-4fba-9af5-1f9d6ff41f00.gif)
+- `/raidbots`: Shows the login credentials of the raidbots account. Only for users with the role "Raidmember" or higher.
+
+- `/bug`: Report a bug.
+    - After sending this command, the bot will direct message you asking for details about the bug.
+
+- `/request-feature`: Request a feature.
+    - After sending this command, the bot will direct message you asking for details about the feature request.
+
 
 # Setup
 
 ## Critical prerequisites to install
 
-* run ```pip3 install -r requirements.txt```
+* Setup a virtual environment ```python -m venv venv/```
+* Run ```pip3 install -r requirements.txt```
 
-* **Rename the file `.env.dev` to `.env`**
+* **Rename the file `.env.example` to `.env`**
 
 * Recommended python version `3.10`
 ## Step 1: Create a Discord bot
@@ -38,16 +52,23 @@
    ![image](https://user-images.githubusercontent.com/89479282/205949600-0c7ddb40-7e82-47a0-b59a-b089f929d177.png)
 ## Step 2: Official API authentication
 
-### Geanerate an Warcraft Logs API key
-1. Go to https://www.warcraftlogs.com/profile
+   ### Generate an Warcraft Logs API key
+   1. Go to https://www.warcraftlogs.com/profile
 
-2. Scroll down and click Generate new v1 API key
+   2. Scroll down and click Generate new v1 API key
 
-   <!-- ![image](https://user-images.githubusercontent.com/89479282/207970699-2e0cb671-8636-4e27-b1f3-b75d6db9b57e.PNG) -->
+   3. Store the SECRET KEY to `.env` under the `WARCRAFT_LOGS_API_KEY`
 
-3. Store the SECRET KEY to `.env` under the `WARCRAFT_LOGS_API_KEY`
+   ### Generate a GitHub personal access token
+   1. Go to https://github.com/settings/tokens
 
-## Step 2: Run the bot on the desktop
+   2. Click on "Generate new token"
+
+   3. Select the repo scope for the token
+
+   4. Store the generated token in `.env` under `GITHUB_PERSONAL_ACCESS_TOKEN`
+
+## Step 3: Run the bot on the desktop
 
 1. Open a terminal or command prompt
 
@@ -55,7 +76,7 @@
 
 3. Run `python3 main.py` or `python main.py` to start the bot
 
-## Step 2: Run the bot with Docker
+## Step 3: Run the bot with Docker
 
 1. Build the Docker image & Run the Docker container `docker compose up -d`
 
