@@ -96,6 +96,33 @@ def run_discord_bot():
             await client.send_message(interaction, "Invalid action.")
             logger.warning(f"Invalid action: {choices.value}")
 
+
+    # * Command to move all users from one voice channel to another
+    @client.tree.command(name="move", description="Move all users from one voice channel to another")
+    async def move(interaction: discord.Interaction, source: discord.VoiceChannel, destination: discord.VoiceChannel):
+        # Only allow administrators to use this command
+        if interaction.user.guild_permissions.administrator: # type: ignore
+            await interaction.response.defer(ephemeral=True)
+            
+            if source is None or destination is None or source == destination:
+                await interaction.followup.send("You didn't give the necessary channels.", ephemeral=True)
+                return
+            
+            # Move all members in the from_channel to the to_channel
+            for member in source.members:
+                await member.move_to(channel=destination)
+
+            await interaction.followup.send(
+                f"Moved all members from {source} to {destination}.", ephemeral=True
+            )
+            logger.info(f"Moved all members from {source} to {destination}.")
+
+        else:
+            await interaction.followup.send(
+                "You do not have permission to use this command.", ephemeral=True
+            )
+            logger.warning(f"Invalid action: {interaction.user.guild_permissions.administrator}") # type: ignore
+
     # * Command to report a bug
     @client.tree.command(name="bug", description="Report a bug")
     async def bug(interaction: discord.Interaction):
