@@ -96,6 +96,26 @@ def run_discord_bot():
             await client.send_message(interaction, "Invalid action.")
             logger.warning(f"Invalid action: {choices.value}")
 
+    # * Command to get the guild's raidbots account credentials
+    @client.tree.command(name="raidbots", description="Display the Login credentials of our guild's raidbots account")
+    async def raidbots(interaction: discord.Interaction):
+        # Ensure the user has the 'Raidmember' role or a higher role
+        user_roles = [role.name for role in interaction.user.roles]   # type: ignore
+        authorized_roles = ["Raidmember", "Offis", "Leitung"]  
+        
+        raidbots_username = os.getenv("RAIDBOTS_USERNAME")
+        raidbots_password = os.getenv("RAIDBOTS_PASSWORD")
+        
+        if any(role in user_roles for role in authorized_roles) or interaction.user.guild_permissions.administrator: # type: ignore
+            await interaction.response.defer(ephemeral=True)
+            await interaction.followup.send(
+                f"The Login credentials for our [Raidbots](https://www.raidbots.com) account are:\n{raidbots_username}\n{raidbots_password}",
+                ephemeral=True
+            )
+        else:
+            await interaction.response.send_message(
+                "You do not have permission to use this command.", ephemeral=True
+            )
 
     # * Command to move all users from one voice channel to another
     @client.tree.command(name="move", description="Move all users from one voice channel to another")
