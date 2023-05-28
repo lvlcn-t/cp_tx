@@ -110,9 +110,10 @@ async def startGuildProfile(client, interaction, embed):
     
     # Get message from interaction for editing the message afterwards if the guild profile was updated
     message = await client.send_message(interaction, embed)
-    init = True
+    message_id = message.id
+    channel_id = message.channel.id
     
-    async def check_guild_embed(init: bool) -> None:
+    async def check_guild_embed() -> None:
         """
         An async function that checks if the guild's rio data has changed.
 
@@ -124,8 +125,10 @@ async def startGuildProfile(client, interaction, embed):
         try:
             content = await fetch_function_data(responses.prepare_rio_guild_embed)
             
-            if content != previous_embed or init is True:
+            if content != previous_embed:
                 # Edit the message directly
+                channel = client.get_channel(channel_id)
+                message = await channel.fetch_message(message_id)
                 await message.edit(embed=content)
                 previous_embed = content
                 logger.info("Guild embed has been updated.")
@@ -136,9 +139,7 @@ async def startGuildProfile(client, interaction, embed):
 
     while is_checking_guild_profile:
         try:
-            await check_guild_embed(init)
-            if init is True:
-                init = False
+            await check_guild_embed()
             await asyncio.sleep(3600)  # Wait for 1 hour
         except Exception as e:
             logger.error(f"An error occurred in check_update: {e}")
