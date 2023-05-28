@@ -34,11 +34,11 @@ async def prepare_rio_guild_embed():
         for raid_index, (raid, summary) in enumerate(raid_progression["raid_progression"].items()): # type: ignore
             # Format raid progress summary with corresponding emoji.
             if "N" in summary["summary"]:
-                summary["summary"] = "<:green:770983655190822913> " + summary["summary"]
+                summary["summary"] = "\U0001F7E2 " + summary["summary"]
             elif "H" in summary["summary"]:
-                summary["summary"] = ":blue_circle: " + summary["summary"]
+                summary["summary"] = "\U0001F535 " + summary["summary"]
             elif "M" in summary["summary"]:
-                summary["summary"] = "<:purple:770983655526105088> " + summary["summary"]
+                summary["summary"] = "\U0001F7E3 " + summary["summary"]
 
             raid_name = raid.replace("-", " ").title()
 
