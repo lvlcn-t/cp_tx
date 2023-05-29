@@ -20,6 +20,20 @@ def run_discord_bot():
         await client.tree.sync()
         logger.info(f"{client.user} is now running!")
 
+    # * Command to create the next week's raid appointments
+    @client.tree.command(name="create-raid", description="Create the next week's raid appointments")
+    async def create_raid(interaction: discord.Interaction, week : str):
+        # Ensure the user has the 'Raidmember' role or a higher role
+        user_roles = [role.name for role in interaction.user.roles]   # type: ignore
+        authorized_roles = ["Offis", "Leitung"]
+        
+        if any(role in user_roles for role in authorized_roles): # type: ignore
+            pass
+        else:
+            await interaction.response.send_message(
+                "You do not have permission to use this command.", ephemeral=True
+            )
+
     # * Command to get the latest logs
     @client.tree.command(name="logs", description="Returns the link to the latest logs")
     @app_commands.choices(choices=
