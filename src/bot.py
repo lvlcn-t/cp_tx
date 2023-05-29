@@ -52,7 +52,7 @@ def run_discord_bot():
         except ParserError:
             await interaction.response.defer(ephemeral=True)
             await client.send_message(interaction, "Invalid date format. Please enter a real date.")
-            logger.warning(f"{interaction.user.display_name} entered a false date.")
+            logger.info(f"{interaction.user.display_name} entered a false date.")
             return
         # Ensure the user has the 'Raidmember' role or a higher role
         user_roles = [role.name for role in interaction.user.roles]   # type: ignore
@@ -334,6 +334,8 @@ User Settings -> Privacy & Safety -> Server Privacy Defaults""",
 - `/logs [start|stop]`: Starts or stops the logging coroutine. Only for users with administrator permissions.
   - **start**: Begins the logging coroutine.
   - **stop**: Stops the logging coroutine.
+  
+- `/logs-from [date]`: Returns the logs from a given date. Only for users with the role "Raidbewerber" or higher.
 
 - `/guild-profile [once|start|stop]`: Shows the guild's raider.io profile.
   - **once**: Sends the guild's raider.io profile as a message. Only for users with the role "Raidbewerber" or higher.

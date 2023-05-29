@@ -6,6 +6,8 @@
   - **start**: Begins the logging coroutine.
   - **stop**: Stops the logging coroutine.
 
+- `/logs-from [date]`: Returns the logs from a given date. Only for users with the role "Raidbewerber" or higher.
+
 - `/guild-profile [once|start|stop]`: Shows the guild's raider.io profile.
   - **once**: Sends the guild's raider.io profile as a message. Only for users with the role "Raidbewerber" or higher.
   - **start**: Begins a coroutine to periodically update the guild's embed with the new raider.io profile information. Only for users with administrator permissions.
