@@ -2,8 +2,10 @@ import os
 import discord
 from discord import app_commands
 from asyncio import TimeoutError
+from datetime import datetime
+from dateutil.parser import parse, ParserError
 
-from src import log, responses, warcraftlogs, raiderio, gh, bot_coroutines
+from src import log, responses, gh, bot_coroutines, warcraftlogs
 from src.aclient import client
 
 # Setting up the logger for the discord bot
@@ -42,11 +44,31 @@ def run_discord_bot():
                 "You do not have permission to use this command.", ephemeral=True
             )
 
+    # * Command to get the logs from a specific date
+    @client.tree.command(name="logs-from", description="Returns the link to the logs from a specific date")
+    async def logs_date(interaction: discord.Interaction, date: str):
+        try:
+            parsed_date = parse(date).date()
+        except ParserError:
+            await interaction.response.defer(ephemeral=True)
+            await client.send_message(interaction, "Invalid date format. Please enter a real date.")
+            logger.warning(f"{interaction.user.display_name} entered a false date.")
+            return
+        # Ensure the user has the 'Raidmember' role or a higher role
+        user_roles = [role.name for role in interaction.user.roles]   # type: ignore
+        authorized_roles = ["Raidmember", "Ehemalige Raider", "Raidbewerber", "Offis", "Leitung"]
+        
+        if any(role in user_roles for role in authorized_roles): # type: ignore
+            await interaction.response.defer(ephemeral=True)
+            await client.send_message(interaction, f"Logs from {date}:\n{await warcraftlogs.logs_from(parsed_date)}")
+            logger.info(f"Found logs from {date} for {interaction.user.display_name}.")
+        else:
+            await interaction.response.send_message(
+                "You do not have permission to use this command.", ephemeral=True
+            )
+
     # * Command to get the guild raider.io profile
-    @client.tree.command(
-        name="guild-profile",
-        description="Returns the link to the guilds raider.io profile",
-    )
+    @client.tree.command(name="guild-profile", description="Returns the link to the guilds raider.io profile")
     @app_commands.choices(choices=
         [
             app_commands.Choice(name="Show once", value="once"),
@@ -101,7 +123,7 @@ def run_discord_bot():
     async def raidbots(interaction: discord.Interaction):
         # Ensure the user has the 'Raidmember' role or a higher role
         user_roles = [role.name for role in interaction.user.roles]   # type: ignore
-        authorized_roles = ["Raidmember", "Offis", "Leitung"]  
+        authorized_roles = ["Raidmember", "Offis", "Leitung"]
         
         raidbots_username = os.getenv("RAIDBOTS_USERNAME")
         raidbots_password = os.getenv("RAIDBOTS_PASSWORD")
