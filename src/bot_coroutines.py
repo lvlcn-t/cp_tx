@@ -5,7 +5,8 @@ from datetime import datetime
 # Initialize logger
 logger = log.setup_logger(__name__)
 
-previous_embed = None
+guild_previous_embed = None
+logs_previous_content = None
 is_checking_logs = None
 is_checking_guild_profile = None
 
@@ -35,8 +36,8 @@ async def startLogs(client, interaction, response=None):
         None: This function does not return anything. It runs indefinitely.
     """
     # Updating global previous_content with the response, if provided
-    global previous_embed
-    previous_embed = response
+    global logs_previous_content
+    logs_previous_content = response
     
     global is_checking_logs
     is_checking_logs = True
@@ -49,7 +50,7 @@ async def startLogs(client, interaction, response=None):
         This function fetches the website content using fetch_website_content() and then checks if it has changed.
         If it has, it sends a message through the client and updates previous_content.
         """
-        global previous_embed
+        global logs_previous_content
 
         # Get the current date and time
         now = datetime.now()
@@ -59,12 +60,12 @@ async def startLogs(client, interaction, response=None):
             try:
                 content = await fetch_function_data(warcraftlogs.latest_logs)
 
-                if content != previous_embed:
+                if content != logs_previous_content:
                     # Website content has changed
                     # Get the channel from the interaction's channel_id and send the message to the channel directly
                     channel = client.get_channel(interaction.channel_id)
                     await channel.send(content)
-                    previous_embed = content
+                    logs_previous_content = content
                     logger.info("Website content has been updated.")
                 else:
                     logger.info("Website content has not changed.")
@@ -101,8 +102,8 @@ async def startGuildProfile(client, interaction, embed):
         None: This function does not return anything. It runs indefinitely.
     """
     # Updating global previous_content with the response, if provided
-    global previous_embed
-    previous_embed = embed
+    global guild_previous_embed
+    guild_previous_embed = embed
 
     global is_checking_guild_profile
     is_checking_guild_profile = True
@@ -120,17 +121,17 @@ async def startGuildProfile(client, interaction, embed):
         This function fetches the website content using fetch_website_content() and then checks if it has changed.
         If it has, it sends a message through the client and updates previous_content.
         """
-        global previous_embed
+        global guild_previous_embed
 
         try:
             content = await fetch_function_data(responses.prepare_rio_guild_embed)
             
-            if content != previous_embed:
+            if content != guild_previous_embed:
                 # Edit the message directly
                 channel = client.get_channel(channel_id)
                 message = await channel.fetch_message(message_id)
                 await message.edit(embed=content)
-                previous_embed = content
+                guild_previous_embed = content
                 logger.info("Guild embed has been updated.")
             else:
                 logger.info("Guild embed has not changed.")
