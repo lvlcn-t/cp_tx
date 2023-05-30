@@ -1,7 +1,7 @@
 // components/Header.tsx
 import React from 'react';
 import Link from 'next/link';
-import SignInButton from './SignInButton'
+import SignInButton from './SignInButton';
 
 const Header: React.FC = () => {
   return (
@@ -18,7 +18,7 @@ const Header: React.FC = () => {
               </Link>
             </li>
             <li>
-              <SignInButton />
+              <SignInButton/>              
             </li>
           </ul>
         </nav>

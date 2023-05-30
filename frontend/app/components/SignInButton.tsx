@@ -6,6 +6,8 @@ import { useSession, signIn, signOut } from 'next-auth/react'
 import { Menu, Transition } from '@headlessui/react'
 import clsx from 'clsx'
 import React from 'react'
+import Cog8ToothIcon from './Cog8ToothIcon';
+import ArrowRightOnRectangleIcon from './ArrowRightOnRectangleIcon';
 
 const SignInButton : React.FC = () => {
     const { data: session } = useSession()
