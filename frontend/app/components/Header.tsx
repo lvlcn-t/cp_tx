@@ -5,19 +5,19 @@ import SignInButton from './SignInButton';
 
 const Header: React.FC = () => {
   return (
-    <header className="bg-blue-600 text-white px-6 py-4">
+    <header className="bg-slate-800 text-white px-6 py-4">
       <div className="container mx-auto flex justify-between items-center">
-        <a href="/" className="text-2xl font-semibold">
+        <Link href="/" className="text-2xl font-semibold inline-block">
           Casual Progress
-        </a>
-        <nav>
+        </Link>
+        <nav className="inline-block">
           <ul>
-            <li>
+            <li className="inline-block">
               <Link href="/settings" className="ml-4">
                 Settings
               </Link>
             </li>
-            <li>
+            <li className="inline-block">
               <SignInButton/>              
             </li>
           </ul>

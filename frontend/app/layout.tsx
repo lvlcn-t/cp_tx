@@ -1,6 +1,8 @@
 import Provider from './components/Provider'
 import './globals.css'
 import { Inter } from 'next/font/google'
+import Header from './components/Header'
+import Footer from './components/Footer'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -21,7 +23,9 @@ export default function RootLayout({
     >
       <body className='flex h-full flex-col'>
         <Provider>
+          <Header/>
           <div className='grow'> {children} </div>
+          <Footer/>
         </Provider>
       </body>
     </html>
