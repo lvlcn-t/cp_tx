@@ -1,10 +1,10 @@
 import requests
-from src import log
 import os
 import json
+from polylog import setup_logger
 
-# Initialize the logger.
-logger = log.setup_logger(__name__)
+# Initialize logger
+logger = setup_logger(__name__)
 
 BASE_URL = "https://raider.io/"
 BASE_REQUEST_URL = BASE_URL + "api/v1/"

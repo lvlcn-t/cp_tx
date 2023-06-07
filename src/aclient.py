@@ -1,11 +1,11 @@
 import os
 import discord
-from src import log
 from dotenv import load_dotenv
 from discord import app_commands
+from polylog import setup_logger
 
 # Initialize logger
-logger = log.setup_logger(__name__)
+logger = setup_logger(__name__)
 # Load environment variables from a .env file
 load_dotenv()
 

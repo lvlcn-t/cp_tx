@@ -1,9 +1,10 @@
-from src import log, raiderio
+from src import raiderio
 import os
 import discord
+from polylog import setup_logger
 
 # Initialize logger
-logger = log.setup_logger(__name__)
+logger = setup_logger(__name__)
 
 
 async def prepare_rio_guild_embed():
