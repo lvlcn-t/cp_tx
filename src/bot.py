@@ -4,12 +4,13 @@ from discord import app_commands
 from asyncio import TimeoutError
 from datetime import datetime
 from dateutil.parser import parse, ParserError
+from polylog import setup_logger
 
-from src import log, responses, gh, bot_coroutines, warcraftlogs
+from src import responses, gh, bot_coroutines, warcraftlogs
 from src.aclient import client
 
 # Setting up the logger for the discord bot
-logger = log.setup_logger(__name__)
+logger = setup_logger(__name__)
 
 
 # Function to run the discord bot
