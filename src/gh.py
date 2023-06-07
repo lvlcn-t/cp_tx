@@ -1,9 +1,9 @@
-from src import log
 import os
 from github import Github
+from polylog import setup_logger
 
 # Initialize logger
-logger = log.setup_logger(__name__)
+logger = setup_logger(__name__)
 
 
 async def create_github_issue(title: str, body: str, labels: list):

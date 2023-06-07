@@ -1,9 +1,10 @@
-from src import warcraftlogs, log, responses
+from src import warcraftlogs, responses
 import asyncio
 from datetime import datetime
+from polylog import setup_logger
 
 # Initialize logger
-logger = log.setup_logger(__name__)
+logger = setup_logger(__name__)
 
 guild_previous_embed = None
 logs_previous_content = None

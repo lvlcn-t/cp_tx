@@ -1,10 +1,10 @@
 import requests
-from src import log
 import os
 from datetime import datetime, date
+from polylog import setup_logger
 
 # Initialize logger
-logger = log.setup_logger(__name__)
+logger = setup_logger(__name__)
 
 # Set constants for base URLs
 BASE_URL = "https://www.warcraftlogs.com"
