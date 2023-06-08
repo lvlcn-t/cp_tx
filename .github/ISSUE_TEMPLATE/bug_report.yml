@@ -52,7 +52,7 @@ body:
         - OS: 
         - Browser: 
         - Version: 
-    render: markdown
+    render: Markdown
   validations:
     required: false
 
