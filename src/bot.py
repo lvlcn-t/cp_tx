@@ -152,9 +152,12 @@ def run_discord_bot():
                 return
             
             # Move all members in the from_channel to the to_channel
-            for member in source.members:
-                await member.move_to(channel=destination)
-
+            try:
+                for member in source.members:
+                    await member.move_to(channel=destination)
+            except Exception as e:
+                logger.error(f"Failed to move all members from {source} to {destination}. Reason: { e }")
+            
             await interaction.followup.send(
                 f"Moved all members from {source} to {destination}.", ephemeral=True
             )
