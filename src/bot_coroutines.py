@@ -69,11 +69,11 @@ async def startLogs(client, interaction, response=None):
                     logs_previous_content = content
                     logger.info("Website content has been updated.")
                 else:
-                    logger.info("Website content has not changed.")
+                    logger.debug("Website content has not changed.")
             except Exception as e:
                 logger.error(f"An error occurred in check_website: {e}")
         else:
-            logger.info("Not the right time for checking the website content.")
+            logger.debug("Not the right time for checking the website content.")
 
     while is_checking_logs:
         try:
