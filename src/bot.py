@@ -22,9 +22,9 @@ def run_discord_bot():
         await client.tree.sync()
         logger.info(f"{client.user} is now running!")
         if os.getenv("DISCORD_CHANNEL_ID_LOGS") is not None:
-            asyncio.create_task(bot_coroutines.startLogs(client, None))
+            client.running_tasks["logs_routine"] = asyncio.create_task(bot_coroutines.startLogs(client, None))
         if os.getenv("DISCORD_CHANNEL_ID_PROFILE") is not None and os.getenv("DISCORD_MESSAGE_ID_PROFILE") is not None:
-            asyncio.create_task(bot_coroutines.startGuildProfile(client, None, None))
+            client.running_tasks["rio_routine"] = asyncio.create_task(bot_coroutines.startGuildProfile(client, None, None))
 
     # * Command to get the latest logs
     @client.tree.command(name="logs", description="Returns the link to the latest logs")
@@ -40,6 +40,8 @@ def run_discord_bot():
             # Start or stop the logs coroutine loop based on the action parameter
             if choices.value == "start":
                 await client.send_message(interaction, "Logs started.")
+                if "logs_routine" in client.running_tasks and not client.running_tasks["logs_routine"].done():
+                    await bot_coroutines.stopLogs()
                 await bot_coroutines.startLogs(client, interaction)
             elif choices.value == "stop":
                 # Stop the coroutine
@@ -100,6 +102,8 @@ def run_discord_bot():
             if interaction.user.guild_permissions.administrator: # type: ignore
                 # Start the coroutine
                 await interaction.response.defer(ephemeral=True)
+                if "rio_routine" in client.running_tasks and not client.running_tasks["rio_routine"].done():
+                    await bot_coroutines.stopGuildProfile()
                 response = await responses.prepare_rio_guild_embed()
                 await client.send_message(interaction, "Started guild profile coroutine.")
                 await bot_coroutines.startGuildProfile(client, interaction, response)

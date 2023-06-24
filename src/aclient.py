@@ -37,6 +37,8 @@ class aclient(discord.Client):
         self.activity = discord.Activity(
             type=discord.ActivityType.listening, name="/help"
         )
+        
+        self.running_tasks = {}
 
     async def send_message(self, interaction, response):
         """Sends a follow-up message in response to an interaction.
