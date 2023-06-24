@@ -1,5 +1,6 @@
 import os
 import discord
+import asyncio
 from discord import app_commands
 from asyncio import TimeoutError
 from datetime import datetime
@@ -20,6 +21,10 @@ def run_discord_bot():
     async def on_ready():
         await client.tree.sync()
         logger.info(f"{client.user} is now running!")
+        if os.getenv("DISCORD_CHANNEL_ID_LOGS") is not None:
+            asyncio.create_task(bot_coroutines.startLogs(client, None))
+        if os.getenv("DISCORD_CHANNEL_ID_PROFILE") is not None and os.getenv("DISCORD_MESSAGE_ID_PROFILE") is not None:
+            asyncio.create_task(bot_coroutines.startGuildProfile(client, None, None))
 
     # * Command to get the latest logs
     @client.tree.command(name="logs", description="Returns the link to the latest logs")
