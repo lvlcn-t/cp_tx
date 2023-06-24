@@ -1,10 +1,10 @@
 version: "3"
 
 services:
-  casual-progress-bot:
+  cp-tx:
     build: .
-    image: casual-progress-bot
-    container_name: casual-progress-bot
+    image: cp-tx
+    container_name: cp-tx
     env_file:
       - .env
     restart: unless-stopped
