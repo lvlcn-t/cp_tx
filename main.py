@@ -1,14 +1,14 @@
 from src import bot
 from dotenv import load_dotenv
 import sys
+from polylog import setup_logger
 
 
 def check_version() -> None:
     import pkg_resources
-    import src.log
 
     load_dotenv()
-    logger = src.log.setup_logger(__name__)
+    logger = setup_logger(__name__)
 
     # Read the requirements.txt file and add each line to a list
     with open("requirements.txt") as f:

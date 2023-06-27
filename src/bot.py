@@ -1,13 +1,17 @@
 import os
 import discord
+import asyncio
 from discord import app_commands
 from asyncio import TimeoutError
+from datetime import datetime
+from dateutil.parser import parse, ParserError
+from polylog import setup_logger, trace_id_var
 
-from src import log, responses, warcraftlogs, raiderio, gh, bot_coroutines
+from src import responses, gh, bot_coroutines, warcraftlogs
 from src.aclient import client
 
 # Setting up the logger for the discord bot
-logger = log.setup_logger(__name__)
+logger = setup_logger(__name__)
 
 
 # Function to run the discord bot
@@ -17,6 +21,12 @@ def run_discord_bot():
     async def on_ready():
         await client.tree.sync()
         logger.info(f"{client.user} is now running!")
+        if os.getenv("DISCORD_CHANNEL_ID_LOGS") is not None:
+            trace_id_var.set(0)
+            client.running_tasks["logs_routine"] = asyncio.create_task(bot_coroutines.startLogs(client, None))
+        if os.getenv("DISCORD_CHANNEL_ID_PROFILE") is not None and os.getenv("DISCORD_MESSAGE_ID_PROFILE") is not None:
+            trace_id_var.set(0)
+            client.running_tasks["rio_routine"] = asyncio.create_task(bot_coroutines.startGuildProfile(client, None, None))
 
     # * Command to get the latest logs
     @client.tree.command(name="logs", description="Returns the link to the latest logs")
@@ -32,6 +42,9 @@ def run_discord_bot():
             # Start or stop the logs coroutine loop based on the action parameter
             if choices.value == "start":
                 await client.send_message(interaction, "Logs started.")
+                trace_id_var.set(interaction.user.id)
+                if "logs_routine" in client.running_tasks and not client.running_tasks["logs_routine"].done():
+                    await bot_coroutines.stopLogs()
                 await bot_coroutines.startLogs(client, interaction)
             elif choices.value == "stop":
                 # Stop the coroutine
@@ -42,11 +55,31 @@ def run_discord_bot():
                 "You do not have permission to use this command.", ephemeral=True
             )
 
+    # * Command to get the logs from a specific date
+    @client.tree.command(name="logs-from", description="Returns the link to the logs from a specific date")
+    async def logs_date(interaction: discord.Interaction, date: str):
+        try:
+            parsed_date = parse(date).date()
+        except ParserError:
+            await interaction.response.defer(ephemeral=True)
+            await client.send_message(interaction, "Invalid date format. Please enter a real date.")
+            logger.info(f"{interaction.user.display_name} entered a false date.")
+            return
+        # Ensure the user has the 'Raidmember' role or a higher role
+        user_roles = [role.name for role in interaction.user.roles]   # type: ignore
+        authorized_roles = ["Raidmember", "Ehemalige Raider", "Raidbewerber", "Offis", "Leitung"]
+        
+        if any(role in user_roles for role in authorized_roles): # type: ignore
+            await interaction.response.defer(ephemeral=True)
+            await client.send_message(interaction, f"Logs from {date}:\n{await warcraftlogs.logs_from(parsed_date)}")
+            logger.info(f"Found logs from {date} for {interaction.user.display_name}.")
+        else:
+            await interaction.response.send_message(
+                "You do not have permission to use this command.", ephemeral=True
+            )
+
     # * Command to get the guild raider.io profile
-    @client.tree.command(
-        name="guild-profile",
-        description="Returns the link to the guilds raider.io profile",
-    )
+    @client.tree.command(name="guild-profile", description="Returns the link to the guilds raider.io profile")
     @app_commands.choices(choices=
         [
             app_commands.Choice(name="Show once", value="once"),
@@ -72,6 +105,8 @@ def run_discord_bot():
             if interaction.user.guild_permissions.administrator: # type: ignore
                 # Start the coroutine
                 await interaction.response.defer(ephemeral=True)
+                if "rio_routine" in client.running_tasks and not client.running_tasks["rio_routine"].done():
+                    await bot_coroutines.stopGuildProfile()
                 response = await responses.prepare_rio_guild_embed()
                 await client.send_message(interaction, "Started guild profile coroutine.")
                 await bot_coroutines.startGuildProfile(client, interaction, response)
@@ -95,6 +130,56 @@ def run_discord_bot():
             await interaction.response.defer(ephemeral=True)
             await client.send_message(interaction, "Invalid action.")
             logger.warning(f"Invalid action: {choices.value}")
+
+    # * Command to get the guild's raidbots account credentials
+    @client.tree.command(name="raidbots", description="Display the Login credentials of our guild's raidbots account")
+    async def raidbots(interaction: discord.Interaction):
+        # Ensure the user has the 'Raidmember' role or a higher role
+        user_roles = [role.name for role in interaction.user.roles]   # type: ignore
+        authorized_roles = ["Raidmember", "Offis", "Leitung"]
+        
+        raidbots_username = os.getenv("RAIDBOTS_USERNAME")
+        raidbots_password = os.getenv("RAIDBOTS_PASSWORD")
+        
+        if any(role in user_roles for role in authorized_roles) or interaction.user.guild_permissions.administrator: # type: ignore
+            await interaction.response.defer(ephemeral=True)
+            await interaction.followup.send(
+                f"The Login credentials for our [Raidbots](https://www.raidbots.com) account are:\n{raidbots_username}\n{raidbots_password}",
+                ephemeral=True
+            )
+        else:
+            await interaction.response.send_message(
+                "You do not have permission to use this command.", ephemeral=True
+            )
+
+    # * Command to move all users from one voice channel to another
+    @client.tree.command(name="move", description="Move all users from one voice channel to another")
+    async def move(interaction: discord.Interaction, source: discord.VoiceChannel, destination: discord.VoiceChannel):
+        # Only allow administrators to use this command
+        if interaction.user.guild_permissions.administrator: # type: ignore
+            await interaction.response.defer(ephemeral=True)
+            
+            if source is None or destination is None or source == destination:
+                await interaction.followup.send("You didn't give the necessary channels.", ephemeral=True)
+                return
+            
+            # Move all members in the from_channel to the to_channel
+            try:
+                for member in source.members:
+                    await member.move_to(channel=destination)
+            except Exception as e:
+                logger.error(f"Failed to move all members from {source} to {destination}. Reason: { e }")
+            
+            await interaction.followup.send(
+                f"Moved all members from {source} to {destination}.", ephemeral=True
+            )
+            logger.info(f"Moved all members from {source} to {destination}.")
+
+        else:
+            await interaction.followup.send(
+                "You do not have permission to use this command.", ephemeral=True
+            )
+            logger.warning(f"Invalid action: {interaction.user.guild_permissions.administrator}") # type: ignore
 
     # * Command to report a bug
     @client.tree.command(name="bug", description="Report a bug")
@@ -265,11 +350,17 @@ User Settings -> Privacy & Safety -> Server Privacy Defaults""",
 - `/logs [start|stop]`: Starts or stops the logging coroutine. Only for users with administrator permissions.
   - **start**: Begins the logging coroutine.
   - **stop**: Stops the logging coroutine.
+  
+- `/logs-from [date]`: Returns the logs from a given date. Only for users with the role "Raidbewerber" or higher.
 
 - `/guild-profile [once|start|stop]`: Shows the guild's raider.io profile.
   - **once**: Sends the guild's raider.io profile as a message. Only for users with the role "Raidbewerber" or higher.
   - **start**: Begins a coroutine to periodically update the guild's embed with the new raider.io profile information. Only for users with administrator permissions.
   - **stop**: Stops the raider.io profile update coroutine. Only for users with administrator permissions.
+
+- `/move [source] [destination]`: Moves all users from one channel to another. Only for users with administrator permissions.
+
+- `/raidbots`: Shows the login credentials of the raidbots account. Only for users with the role "Raidmember" or higher.
 
 - `/bug`: Report a bug.
     - After sending this command, the bot will direct message you asking for details about the bug.

@@ -1,11 +1,11 @@
 import os
 import discord
-from src import log
 from dotenv import load_dotenv
 from discord import app_commands
+from polylog import setup_logger
 
 # Initialize logger
-logger = log.setup_logger(__name__)
+logger = setup_logger(__name__)
 # Load environment variables from a .env file
 load_dotenv()
 
@@ -37,6 +37,8 @@ class aclient(discord.Client):
         self.activity = discord.Activity(
             type=discord.ActivityType.listening, name="/help"
         )
+        
+        self.running_tasks = {}
 
     async def send_message(self, interaction, response):
         """Sends a follow-up message in response to an interaction.

@@ -1,11 +1,14 @@
-from src import warcraftlogs, log, responses
+from src import warcraftlogs, responses
 import asyncio
 from datetime import datetime
+import os
+from polylog import setup_logger, span_id_var
 
 # Initialize logger
-logger = log.setup_logger(__name__)
+logger = setup_logger(__name__)
 
-previous_embed = None
+guild_previous_embed = None
+logs_previous_content = None
 is_checking_logs = None
 is_checking_guild_profile = None
 
@@ -28,18 +31,22 @@ async def startLogs(client, interaction, response=None):
 
     Args:
         client (discord.Client): The client object that will be used to send messages
-        interaction (discord.Interaction): The interaction object that will be used to send messages
+        interaction (discord.Interaction, None): The interaction object that will be used to send messages
         response (str, optional): The previous content of the website. Defaults to None.
 
     Returns:
         None: This function does not return anything. It runs indefinitely.
     """
     # Updating global previous_content with the response, if provided
-    global previous_embed
-    previous_embed = response
+    global logs_previous_content
+    logs_previous_content = response
     
     global is_checking_logs
     is_checking_logs = True
+    if interaction is not None:
+        span_id_var.set(interaction.channel_id)
+    else:
+        span_id_var.set(int(os.getenv("DISCORD_CHANNEL_ID_LOGS")))
     logger.info("Log coroutine has been enabled.")
     
     async def check_website():
@@ -49,7 +56,7 @@ async def startLogs(client, interaction, response=None):
         This function fetches the website content using fetch_website_content() and then checks if it has changed.
         If it has, it sends a message through the client and updates previous_content.
         """
-        global previous_embed
+        global logs_previous_content
 
         # Get the current date and time
         now = datetime.now()
@@ -59,19 +66,29 @@ async def startLogs(client, interaction, response=None):
             try:
                 content = await fetch_function_data(warcraftlogs.latest_logs)
 
-                if content != previous_embed:
+                if content != logs_previous_content:
                     # Website content has changed
                     # Get the channel from the interaction's channel_id and send the message to the channel directly
-                    channel = client.get_channel(interaction.channel_id)
+                    if interaction is not None:
+                        channel = client.get_channel(interaction.channel_id)
+                    else:
+                        try:
+                            channel_id = int(os.getenv("DISCORD_CHANNEL_ID_LOGS")) # type: ignore
+                            channel = client.get_channel(channel_id)
+                        except Exception as e:
+                            logger.exception(f"DISCORD_CHANNEL_ID_LOGS is not an integer: {e}")
+                            raise TypeError("DISCORD_CHANNEL_ID_LOGS is not an integer.")
+                    
                     await channel.send(content)
-                    previous_embed = content
+                    logs_previous_content = content
                     logger.info("Website content has been updated.")
                 else:
+                    logs_previous_content = content
                     logger.info("Website content has not changed.")
             except Exception as e:
                 logger.error(f"An error occurred in check_website: {e}")
         else:
-            logger.info("Not the right time for checking the website content.")
+            logger.debug("Not the right time for checking the website content.")
 
     while is_checking_logs:
         try:
@@ -101,33 +118,49 @@ async def startGuildProfile(client, interaction, embed):
         None: This function does not return anything. It runs indefinitely.
     """
     # Updating global previous_content with the response, if provided
-    global previous_embed
-    previous_embed = embed
+    global guild_previous_embed
+    guild_previous_embed = embed
 
     global is_checking_guild_profile
     is_checking_guild_profile = True
+    
+    if interaction is not None:
+        span_id_var.set(interaction.channel_id)
+    else:
+        span_id_var.set(int(os.getenv("DISCORD_CHANNEL_ID_PROFILE")))
     logger.info("Guild profile coroutine has been enabled.")
     
     # Get message from interaction for editing the message afterwards if the guild profile was updated
-    message = await client.send_message(interaction, embed)
-    init = True
-    
-    async def check_guild_embed(init: bool) -> None:
+    if interaction is not None and embed is not None:
+        message = await client.send_message(interaction, embed)
+        message_id = message.id
+        channel_id = message.channel.id
+    else:
+        try:
+            message_id = int(os.getenv("DISCORD_MESSAGE_ID_PROFILE")) # type: ignore
+            channel_id = int(os.getenv("DISCORD_CHANNEL_ID_PROFILE")) # type: ignore
+        except Exception as e:
+            logger.exception(f"DISCORD_MESSAGE_ID_PROFILE or DISCORD_CHANNEL_ID_PROFILE are not an integer: {e}")
+            raise TypeError("DISCORD_MESSAGE_ID_PROFILE or DISCORD_CHANNEL_ID_PROFILE not an integer")
+            
+    async def check_guild_embed() -> None:
         """
         An async function that checks if the guild's rio data has changed.
 
         This function fetches the website content using fetch_website_content() and then checks if it has changed.
         If it has, it sends a message through the client and updates previous_content.
         """
-        global previous_embed
+        global guild_previous_embed
 
         try:
             content = await fetch_function_data(responses.prepare_rio_guild_embed)
             
-            if content != previous_embed or init is True:
+            if content != guild_previous_embed:
                 # Edit the message directly
+                channel = client.get_channel(channel_id)
+                message = await channel.fetch_message(message_id)
                 await message.edit(embed=content)
-                previous_embed = content
+                guild_previous_embed = content
                 logger.info("Guild embed has been updated.")
             else:
                 logger.info("Guild embed has not changed.")
@@ -136,9 +169,7 @@ async def startGuildProfile(client, interaction, embed):
 
     while is_checking_guild_profile:
         try:
-            await check_guild_embed(init)
-            if init is True:
-                init = False
+            await check_guild_embed()
             await asyncio.sleep(3600)  # Wait for 1 hour
         except Exception as e:
             logger.error(f"An error occurred in check_update: {e}")
