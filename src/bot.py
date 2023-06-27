@@ -5,7 +5,7 @@ from discord import app_commands
 from asyncio import TimeoutError
 from datetime import datetime
 from dateutil.parser import parse, ParserError
-from polylog import setup_logger
+from polylog import setup_logger, trace_id_var
 
 from src import responses, gh, bot_coroutines, warcraftlogs
 from src.aclient import client
@@ -22,8 +22,10 @@ def run_discord_bot():
         await client.tree.sync()
         logger.info(f"{client.user} is now running!")
         if os.getenv("DISCORD_CHANNEL_ID_LOGS") is not None:
+            trace_id_var.set(0)
             client.running_tasks["logs_routine"] = asyncio.create_task(bot_coroutines.startLogs(client, None))
         if os.getenv("DISCORD_CHANNEL_ID_PROFILE") is not None and os.getenv("DISCORD_MESSAGE_ID_PROFILE") is not None:
+            trace_id_var.set(0)
             client.running_tasks["rio_routine"] = asyncio.create_task(bot_coroutines.startGuildProfile(client, None, None))
 
     # * Command to get the latest logs
@@ -40,6 +42,7 @@ def run_discord_bot():
             # Start or stop the logs coroutine loop based on the action parameter
             if choices.value == "start":
                 await client.send_message(interaction, "Logs started.")
+                trace_id_var.set(interaction.user.id)
                 if "logs_routine" in client.running_tasks and not client.running_tasks["logs_routine"].done():
                     await bot_coroutines.stopLogs()
                 await bot_coroutines.startLogs(client, interaction)
