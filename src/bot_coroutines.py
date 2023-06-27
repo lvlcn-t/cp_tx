@@ -2,7 +2,7 @@ from src import warcraftlogs, responses
 import asyncio
 from datetime import datetime
 import os
-from polylog import setup_logger
+from polylog import setup_logger, span_id_var
 
 # Initialize logger
 logger = setup_logger(__name__)
@@ -43,6 +43,10 @@ async def startLogs(client, interaction, response=None):
     
     global is_checking_logs
     is_checking_logs = True
+    if interaction is not None:
+        span_id_var.set(interaction.channel_id)
+    else:
+        span_id_var.set(int(os.getenv("DISCORD_CHANNEL_ID_LOGS")))
     logger.info("Log coroutine has been enabled.")
     
     async def check_website():
@@ -79,7 +83,8 @@ async def startLogs(client, interaction, response=None):
                     logs_previous_content = content
                     logger.info("Website content has been updated.")
                 else:
-                    logger.debug("Website content has not changed.")
+                    logs_previous_content = content
+                    logger.info("Website content has not changed.")
             except Exception as e:
                 logger.error(f"An error occurred in check_website: {e}")
         else:
@@ -118,6 +123,11 @@ async def startGuildProfile(client, interaction, embed):
 
     global is_checking_guild_profile
     is_checking_guild_profile = True
+    
+    if interaction is not None:
+        span_id_var.set(interaction.channel_id)
+    else:
+        span_id_var.set(int(os.getenv("DISCORD_CHANNEL_ID_PROFILE")))
     logger.info("Guild profile coroutine has been enabled.")
     
     # Get message from interaction for editing the message afterwards if the guild profile was updated
