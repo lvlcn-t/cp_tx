@@ -33,7 +33,7 @@ six = "==1.16.0"
 urllib3 = "==2.0.2"
 wrapt = "==1.15.0"
 yarl = "==1.9.2"
-polylog = "*"
+polylog = "==0.0.2"
 
 [dev-packages]
 

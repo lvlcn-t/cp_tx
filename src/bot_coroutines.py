@@ -1,7 +1,8 @@
 from src import warcraftlogs, responses
 import asyncio
 from datetime import datetime
-from polylog import setup_logger
+import os
+from polylog import setup_logger, span_id_var
 
 # Initialize logger
 logger = setup_logger(__name__)
@@ -30,7 +31,7 @@ async def startLogs(client, interaction, response=None):
 
     Args:
         client (discord.Client): The client object that will be used to send messages
-        interaction (discord.Interaction): The interaction object that will be used to send messages
+        interaction (discord.Interaction, None): The interaction object that will be used to send messages
         response (str, optional): The previous content of the website. Defaults to None.
 
     Returns:
@@ -42,6 +43,10 @@ async def startLogs(client, interaction, response=None):
     
     global is_checking_logs
     is_checking_logs = True
+    if interaction is not None:
+        span_id_var.set(interaction.channel_id)
+    else:
+        span_id_var.set(int(os.getenv("DISCORD_CHANNEL_ID_LOGS")))
     logger.info("Log coroutine has been enabled.")
     
     async def check_website():
@@ -64,12 +69,22 @@ async def startLogs(client, interaction, response=None):
                 if content != logs_previous_content:
                     # Website content has changed
                     # Get the channel from the interaction's channel_id and send the message to the channel directly
-                    channel = client.get_channel(interaction.channel_id)
+                    if interaction is not None:
+                        channel = client.get_channel(interaction.channel_id)
+                    else:
+                        try:
+                            channel_id = int(os.getenv("DISCORD_CHANNEL_ID_LOGS")) # type: ignore
+                            channel = client.get_channel(channel_id)
+                        except Exception as e:
+                            logger.exception(f"DISCORD_CHANNEL_ID_LOGS is not an integer: {e}")
+                            raise TypeError("DISCORD_CHANNEL_ID_LOGS is not an integer.")
+                    
                     await channel.send(content)
                     logs_previous_content = content
                     logger.info("Website content has been updated.")
                 else:
-                    logger.debug("Website content has not changed.")
+                    logs_previous_content = content
+                    logger.info("Website content has not changed.")
             except Exception as e:
                 logger.error(f"An error occurred in check_website: {e}")
         else:
@@ -108,13 +123,26 @@ async def startGuildProfile(client, interaction, embed):
 
     global is_checking_guild_profile
     is_checking_guild_profile = True
+    
+    if interaction is not None:
+        span_id_var.set(interaction.channel_id)
+    else:
+        span_id_var.set(int(os.getenv("DISCORD_CHANNEL_ID_PROFILE")))
     logger.info("Guild profile coroutine has been enabled.")
     
     # Get message from interaction for editing the message afterwards if the guild profile was updated
-    message = await client.send_message(interaction, embed)
-    message_id = message.id
-    channel_id = message.channel.id
-    
+    if interaction is not None and embed is not None:
+        message = await client.send_message(interaction, embed)
+        message_id = message.id
+        channel_id = message.channel.id
+    else:
+        try:
+            message_id = int(os.getenv("DISCORD_MESSAGE_ID_PROFILE")) # type: ignore
+            channel_id = int(os.getenv("DISCORD_CHANNEL_ID_PROFILE")) # type: ignore
+        except Exception as e:
+            logger.exception(f"DISCORD_MESSAGE_ID_PROFILE or DISCORD_CHANNEL_ID_PROFILE are not an integer: {e}")
+            raise TypeError("DISCORD_MESSAGE_ID_PROFILE or DISCORD_CHANNEL_ID_PROFILE not an integer")
+            
     async def check_guild_embed() -> None:
         """
         An async function that checks if the guild's rio data has changed.

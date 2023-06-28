@@ -1,10 +1,11 @@
 import os
 import discord
+import asyncio
 from discord import app_commands
 from asyncio import TimeoutError
 from datetime import datetime
 from dateutil.parser import parse, ParserError
-from polylog import setup_logger
+from polylog import setup_logger, trace_id_var
 
 from src import responses, gh, bot_coroutines, warcraftlogs
 from src.aclient import client
@@ -20,6 +21,12 @@ def run_discord_bot():
     async def on_ready():
         await client.tree.sync()
         logger.info(f"{client.user} is now running!")
+        if os.getenv("DISCORD_CHANNEL_ID_LOGS") is not None:
+            trace_id_var.set(0)
+            client.running_tasks["logs_routine"] = asyncio.create_task(bot_coroutines.startLogs(client, None))
+        if os.getenv("DISCORD_CHANNEL_ID_PROFILE") is not None and os.getenv("DISCORD_MESSAGE_ID_PROFILE") is not None:
+            trace_id_var.set(0)
+            client.running_tasks["rio_routine"] = asyncio.create_task(bot_coroutines.startGuildProfile(client, None, None))
 
     # * Command to create the next week's raid appointments
     @client.tree.command(name="create-raid", description="Create the next week's raid appointments")
@@ -49,6 +56,9 @@ def run_discord_bot():
             # Start or stop the logs coroutine loop based on the action parameter
             if choices.value == "start":
                 await client.send_message(interaction, "Logs started.")
+                trace_id_var.set(interaction.user.id)
+                if "logs_routine" in client.running_tasks and not client.running_tasks["logs_routine"].done():
+                    await bot_coroutines.stopLogs()
                 await bot_coroutines.startLogs(client, interaction)
             elif choices.value == "stop":
                 # Stop the coroutine
@@ -109,6 +119,8 @@ def run_discord_bot():
             if interaction.user.guild_permissions.administrator: # type: ignore
                 # Start the coroutine
                 await interaction.response.defer(ephemeral=True)
+                if "rio_routine" in client.running_tasks and not client.running_tasks["rio_routine"].done():
+                    await bot_coroutines.stopGuildProfile()
                 response = await responses.prepare_rio_guild_embed()
                 await client.send_message(interaction, "Started guild profile coroutine.")
                 await bot_coroutines.startGuildProfile(client, interaction, response)
