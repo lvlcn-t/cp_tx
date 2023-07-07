@@ -3,21 +3,23 @@ import asyncio
 from datetime import datetime
 import os
 from polylog import setup_logger, span_id_var
+from typing import Union, Callable, Optional
+import discord
 
 # Initialize logger
 logger = setup_logger(__name__)
 
-guild_previous_embed = None
-logs_previous_content = None
-is_checking_logs = None
-is_checking_guild_profile = None
+guild_previous_embed: Union[None, discord.Embed] = None
+logs_previous_content: Union[None, str] = None
+is_checking_logs: Union[None, bool] = None
+is_checking_guild_profile: Union[None, bool] = None
 
-async def fetch_function_data(callback_function):
+async def fetch_function_data(callback_function: Callable) -> Union[None, discord.Embed, str]:
         """
         An async function to fetch a functions response.
 
         Args:
-            callback_function (function): The function to call to get the data.
+            callback_function (Callable): The function to call to get the data.
 
         Returns:
             data: The data returned by the callback_function.
@@ -25,7 +27,7 @@ async def fetch_function_data(callback_function):
         data = await callback_function()
         return data
 
-async def startLogs(client, interaction, response=None):
+async def startLogs(client: discord.Client, interaction: discord.Interaction, response=None) -> None:
     """
     This function is used to check for updates on a website. It's an asyncio coroutine and should be used with await.
 
@@ -44,9 +46,9 @@ async def startLogs(client, interaction, response=None):
     global is_checking_logs
     is_checking_logs = True
     if interaction is not None:
-        span_id_var.set(interaction.channel_id)
+        span_id_var.set(interaction.channel_id) # type: ignore
     else:
-        span_id_var.set(int(os.getenv("DISCORD_CHANNEL_ID_LOGS")))
+        span_id_var.set(int(os.getenv("DISCORD_CHANNEL_ID_LOGS"))) # type: ignore
     logger.info("Log coroutine has been enabled.")
     
     async def check_website():
@@ -64,13 +66,13 @@ async def startLogs(client, interaction, response=None):
         # Check if the current day is Tuesday or Friday, and the time is between 4 pm and 9 pm UTC (6 pm and 11 pm CEST)
         if (now.weekday() == 1 or now.weekday() == 4) and 16 <= now.hour < 21:
             try:
-                content = await fetch_function_data(warcraftlogs.latest_logs)
+                content: Union[None, str, discord.Embed] = await fetch_function_data(warcraftlogs.latest_logs)
 
                 if content != logs_previous_content:
                     # Website content has changed
                     # Get the channel from the interaction's channel_id and send the message to the channel directly
                     if interaction is not None:
-                        channel = client.get_channel(interaction.channel_id)
+                        channel: Optional[Union[discord.abc.GuildChannel, discord.Thread, discord.abc.PrivateChannel]] = client.get_channel(interaction.channel_id) # type: ignore
                     else:
                         try:
                             channel_id = int(os.getenv("DISCORD_CHANNEL_ID_LOGS")) # type: ignore
@@ -79,11 +81,11 @@ async def startLogs(client, interaction, response=None):
                             logger.exception(f"DISCORD_CHANNEL_ID_LOGS is not an integer: {e}")
                             raise TypeError("DISCORD_CHANNEL_ID_LOGS is not an integer.")
                     
-                    await channel.send(content)
-                    logs_previous_content = content
+                    await channel.send(content) # type: ignore
+                    logs_previous_content = str(content)
                     logger.info("Website content has been updated.")
                 else:
-                    logs_previous_content = content
+                    logs_previous_content = str(content)
                     logger.info("Website content has not changed.")
             except Exception as e:
                 logger.error(f"An error occurred in check_website: {e}")
@@ -101,11 +103,11 @@ async def stopLogs():
     """This function is used to stop the website content checking.
     """
     global is_checking_logs
-    is_checking_logs = False
+    is_checking_logs = bool(False)
     logger.info("Log coroutine has been disabled.")
 
 
-async def startGuildProfile(client, interaction, embed):
+async def startGuildProfile(client: discord.Client, interaction: discord.Interaction, embed: Union[None, discord.Embed]) -> None:
     """
     This function is used to check for updates on a website. It's an asyncio coroutine and should be used with await.
 
@@ -119,26 +121,26 @@ async def startGuildProfile(client, interaction, embed):
     """
     # Updating global previous_content with the response, if provided
     global guild_previous_embed
-    guild_previous_embed = embed
+    guild_previous_embed: Union[None, discord.Embed] = embed
 
     global is_checking_guild_profile
     is_checking_guild_profile = True
     
     if interaction is not None:
-        span_id_var.set(interaction.channel_id)
+        span_id_var.set(interaction.channel_id) # type: ignore
     else:
-        span_id_var.set(int(os.getenv("DISCORD_CHANNEL_ID_PROFILE")))
+        span_id_var.set(int(os.getenv("DISCORD_CHANNEL_ID_PROFILE"))) # type: ignore
     logger.info("Guild profile coroutine has been enabled.")
     
     # Get message from interaction for editing the message afterwards if the guild profile was updated
     if interaction is not None and embed is not None:
-        message = await client.send_message(interaction, embed)
-        message_id = message.id
-        channel_id = message.channel.id
+        message: Union[None, Optional[discord.WebhookMessage]] = await client.send_message(interaction, embed) # type: ignore because it's function of custom discord aclient class
+        message_id = message.id                         # type: ignore
+        channel_id = message.channel.id                 # type: ignore
     else:
         try:
-            message_id = int(os.getenv("DISCORD_MESSAGE_ID_PROFILE")) # type: ignore
-            channel_id = int(os.getenv("DISCORD_CHANNEL_ID_PROFILE")) # type: ignore
+            message_id: int = int(str(os.getenv("DISCORD_MESSAGE_ID_PROFILE")))
+            channel_id: int = int(str(os.getenv("DISCORD_CHANNEL_ID_PROFILE")))
         except Exception as e:
             logger.exception(f"DISCORD_MESSAGE_ID_PROFILE or DISCORD_CHANNEL_ID_PROFILE are not an integer: {e}")
             raise TypeError("DISCORD_MESSAGE_ID_PROFILE or DISCORD_CHANNEL_ID_PROFILE not an integer")
@@ -158,9 +160,9 @@ async def startGuildProfile(client, interaction, embed):
             if content != guild_previous_embed:
                 # Edit the message directly
                 channel = client.get_channel(channel_id)
-                message = await channel.fetch_message(message_id)
-                await message.edit(embed=content)
-                guild_previous_embed = content
+                message = await channel.fetch_message(message_id) # type: ignore
+                await message.edit(embed=content) # type: ignore
+                guild_previous_embed = content # type: ignore
                 logger.info("Guild embed has been updated.")
             else:
                 logger.info("Guild embed has not changed.")
@@ -178,5 +180,5 @@ async def stopGuildProfile():
     """This function is used to disable the guild profile checking.
     """
     global is_checking_guild_profile
-    is_checking_guild_profile = False
+    is_checking_guild_profile = bool(False)
     logger.info("Guild profile coroutine has been disabled.")

@@ -2,6 +2,7 @@ import requests
 import os
 from datetime import datetime, date
 from polylog import setup_logger
+from typing import Union
 
 # Initialize logger
 logger = setup_logger(__name__)
@@ -22,25 +23,25 @@ async def latest_logs() -> str:
         str: URL of the latest log or an error message
     """
     # Get WarcraftLogs API token from environment variables
-    WL_API_KEY = os.getenv("WARCRAFT_LOGS_API_KEY")
+    WL_API_KEY: Union[None, str] = os.getenv("WARCRAFT_LOGS_API_KEY")
 
     # Base URL for Warcraft logs API
-    base_guild_url = (
+    base_guild_url: str = (
         BASE_REQUEST_URL + "reports/guild/Casual%20Progress/eredar/eu?api_key="
     )
 
     # Fetch API key from environment variables
-    url = base_guild_url + str(WL_API_KEY)
-    data = requests.get(url)
+    url: str = base_guild_url + str(WL_API_KEY)
+    data: requests.Response = requests.get(url)
     try:
         if data.status_code == 200:
             # Parse the response JSON
-            data_json = data.json()
+            data_json: dict = data.json()
             # Fetch log ID
-            logs_id = data_json[0]["id"]
+            logs_id: str = data_json[0]["id"]
 
             # Construct the log URL
-            response = BASE_RESPONSE_REPORTS_URL + logs_id
+            response: str = BASE_RESPONSE_REPORTS_URL + logs_id
 
             return response
 

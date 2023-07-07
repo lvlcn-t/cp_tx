@@ -26,17 +26,17 @@ class aclient(discord.Client):
         the command tree (for handling commands), and the bot's activity (visible to users in Discord).
         """
         # Set up intents
-        intents = discord.Intents.default()
+        intents: discord.Intents = discord.Intents.default()
         intents.message_content = True
 
         # Initialize the superclass with the created intents
         super().__init__(intents=intents)
 
         # Create a CommandTree instance for handling commands
-        self.tree = app_commands.CommandTree(self)
+        self.tree: app_commands.CommandTree = app_commands.CommandTree(self)
 
         # Set the bot's activity
-        self.activity = discord.Activity(
+        self.activity: discord.Activity = discord.Activity(
             type=discord.ActivityType.listening, name="/help"
         )
         
@@ -70,8 +70,8 @@ class aclient(discord.Client):
     
     # Function to check if a task is running
     def is_task_running(self, task_name: str) -> bool:
-        task = client.running_tasks.get(task_name)
+        task: Union[None, asyncio.Task] = client.running_tasks.get(task_name)
         return task is not None and not task.done()
 
 # Create an instance of the custom client class
-client = aclient()
+client: aclient = aclient()
