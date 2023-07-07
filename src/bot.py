@@ -16,17 +16,21 @@ logger = setup_logger(__name__)
 
 # Function to run the discord bot
 def run_discord_bot():
-    # * Event triggered when the bot is ready
+    # Event triggered when the bot is ready
     @client.event
     async def on_ready():
         await client.tree.sync()
         logger.info(f"{client.user} is now running!")
+        
         if os.getenv("DISCORD_CHANNEL_ID_LOGS") is not None:
-            trace_id_var.set(0)
-            client.running_tasks["logs_routine"] = asyncio.create_task(bot_coroutines.startLogs(client, None))
+            if not client.is_task_running("logs_routine"):
+                trace_id_var.set(0) # type: ignore
+                client.running_tasks["logs_routine"] = asyncio.create_task(bot_coroutines.startLogs(client, None))
+        
         if os.getenv("DISCORD_CHANNEL_ID_PROFILE") is not None and os.getenv("DISCORD_MESSAGE_ID_PROFILE") is not None:
-            trace_id_var.set(0)
-            client.running_tasks["rio_routine"] = asyncio.create_task(bot_coroutines.startGuildProfile(client, None, None))
+            if not client.is_task_running("rio_routine"):
+                trace_id_var.set(0) # type: ignore
+                client.running_tasks["rio_routine"] = asyncio.create_task(bot_coroutines.startGuildProfile(client, None, None))
 
     # * Command to get the latest logs
     @client.tree.command(name="logs", description="Returns the link to the latest logs")
@@ -41,11 +45,14 @@ def run_discord_bot():
             await interaction.response.defer(ephemeral=True)
             # Start or stop the logs coroutine loop based on the action parameter
             if choices.value == "start":
-                await client.send_message(interaction, "Logs started.")
-                trace_id_var.set(interaction.user.id)
-                if "logs_routine" in client.running_tasks and not client.running_tasks["logs_routine"].done():
-                    await bot_coroutines.stopLogs()
-                await bot_coroutines.startLogs(client, interaction)
+                trace_id_var.set(interaction.user.id) # type: ignore
+                if not client.is_task_running("logs_routine"):
+                    await client.send_message(interaction, "Logs started.")
+                    await bot_coroutines.startLogs(client, interaction)
+                else:
+                    await client.send_message(interaction, "Routine is already running")
+                    logger.info(f"{interaction.user.name} tried to create another instance of the log coroutine")
+                    
             elif choices.value == "stop":
                 # Stop the coroutine
                 await bot_coroutines.stopLogs()
@@ -67,7 +74,7 @@ def run_discord_bot():
             return
         # Ensure the user has the 'Raidmember' role or a higher role
         user_roles = [role.name for role in interaction.user.roles]   # type: ignore
-        authorized_roles = ["Raidmember", "Ehemalige Raider", "Raidbewerber", "Offis", "Leitung"]
+        authorized_roles: list[str] = ["Raidmember", "Ehemalige Raider", "Raidbewerber", "Offis", "Leitung"]
         
         if any(role in user_roles for role in authorized_roles): # type: ignore
             await interaction.response.defer(ephemeral=True)
@@ -105,11 +112,13 @@ def run_discord_bot():
             if interaction.user.guild_permissions.administrator: # type: ignore
                 # Start the coroutine
                 await interaction.response.defer(ephemeral=True)
-                if "rio_routine" in client.running_tasks and not client.running_tasks["rio_routine"].done():
-                    await bot_coroutines.stopGuildProfile()
-                response = await responses.prepare_rio_guild_embed()
-                await client.send_message(interaction, "Started guild profile coroutine.")
-                await bot_coroutines.startGuildProfile(client, interaction, response)
+                if not client.is_task_running("rio_routine"):
+                    response = await responses.prepare_rio_guild_embed()
+                    await client.send_message(interaction, "Started guild profile coroutine.")
+                    await bot_coroutines.startGuildProfile(client, interaction, response)
+                else:
+                    await client.send_message(interaction, "Routine is already running")
+                    logger.info(f"{interaction.user.name} tried to create another instance of the rio guild coroutine")
             else:
                 await interaction.response.send_message(
                     "You do not have permission to use this command.", ephemeral=True
