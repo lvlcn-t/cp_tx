@@ -1,8 +1,10 @@
 import os
 import discord
 from dotenv import load_dotenv
-from discord import app_commands
+from discord import app_commands, WebhookMessage
 from polylog import setup_logger
+import asyncio
+from typing import Union, Optional
 
 # Initialize logger
 logger = setup_logger(__name__)
@@ -38,9 +40,9 @@ class aclient(discord.Client):
             type=discord.ActivityType.listening, name="/help"
         )
         
-        self.running_tasks = {}
+        self.running_tasks: dict[str, asyncio.Task] = {}
 
-    async def send_message(self, interaction, response):
+    async def send_message(self, interaction: discord.Interaction, response) -> Union[None, Optional[WebhookMessage]]:
         """Sends a follow-up message in response to an interaction.
 
         Args:
@@ -65,7 +67,11 @@ class aclient(discord.Client):
                 f"> **ERROR: Something went wrong, please try again later!**"
             )
             logger.exception(f"Error while sending message: {e}")
-
+    
+    # Function to check if a task is running
+    def is_task_running(self, task_name: str) -> bool:
+        task = client.running_tasks.get(task_name)
+        return task is not None and not task.done()
 
 # Create an instance of the custom client class
 client = aclient()
